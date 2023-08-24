@@ -31,6 +31,11 @@ trydata = read.csv("raw_data/TRY/28371.csv") |>
 table(trydata$TraitName)
 table(trydata$DataName)
 
+TRY.EN = trydata |>
+  filter(species == "Empetrum nigrum") |>
+  group_by(trait) |>
+  summarize(n = length(trait))
+
 # Read in DURIN data ----
 durin.subset.try = read.csv("output/2023.08.16_cleanDURIN.csv") %>%
   # Filter to relevant data
