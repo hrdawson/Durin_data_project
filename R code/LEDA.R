@@ -43,5 +43,13 @@ leda.sla = read.csv("raw_data/LEDA/LEDA_SLA.csv") |>
 
 ## Join to one dataframe ----
 leda = leda.height |>
-  bind_rows(leda.ldmc, leda.leafmass, leda.leafsize, leda.sla)
+  bind_rows(leda.ldmc, leda.leafmass, leda.leafsize, leda.sla) |>
+  separate(species, into = c("genus", "epithet", "subspecies"), remove = FALSE)
 
+# Narrow to Empetrum ----
+leda.en = leda |>
+  filter(genus == "Empetrum") |>
+  filter(general.method %in% c("actual measurement", "actual measurement (following LEDA data standards",
+                               "unknown"))
+
+table(leda.en$trait)
