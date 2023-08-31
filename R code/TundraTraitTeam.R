@@ -84,3 +84,11 @@ ggplot(durin.TTT.EN |> filter(trait %in% c("plant_height", "wet_mass_g")),
   facet_grid(~trait, scales = "free_y") +
   # labs(title = "Plant height") +
   theme_bw()
+
+# Export authors to see if I can find pubs ----
+ttt.authors = tundratraits |>
+  filter(AccSpeciesName == "Empetrum nigrum") |>
+  select(Year, DataContributor) |>
+  distinct()
+
+# write.csv(ttt.authors, "output/TTT_authors.csv")
