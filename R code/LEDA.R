@@ -1,0 +1,47 @@
+# Import and harmonize datasets ----
+# Go back later and check that the protocols match what we've been doing...
+leda.height = read.csv("raw_data/LEDA/LEDA_CanopyHeight.csv") |>
+  rename(species = SBS.name, spp.nr = SBS.number, value = single.value..m.) |>
+  mutate(trait = "plant_height",
+         #convert to CM
+         value = value/100,
+         unit = "cm")
+
+leda.ldmc = read.csv("raw_data/LEDA/LEDA_LDMC.csv") |>
+  rename(species = SBS.name, spp.nr = SBS.number, value = single.value..mg.g.) |>
+  select(-c(mean.LMDC..mg.g.,maximum.LDMC..mg.g., minimum.LDMC..mg.g.,
+            number.of.replicates, standard.deviation, standard.error)) |>
+  mutate(trait = "LDMC",
+         unit = "mg_g")
+
+leda.leafmass = read.csv("raw_data/LEDA/LEDA_LeafMass.csv") |>
+  rename(species = SBS.name, spp.nr = SBS.number, value = single.value..mg.) |>
+  select(-c(mean.LM..mg.,maximum.LM..mg., minimum.LM..mg.,
+            number.of.replicates, standard.deviation, standard.error)) |>
+  mutate(trait = "dry_mass",
+         # Convert to g
+         value = value/1000,
+         unit = "g")
+
+leda.leafsize = read.csv("raw_data/LEDA/LEDA_LeafSize.csv") |>
+  rename(species = SBS.name, spp.nr = SBS.number, value = single.value..mm.2.) |>
+  select(-c(mean.LS..mm.2.,maximum.LS..mm.2., minimum.LS..mm.2.,
+            number.of.replicates, standard.deviation, standard.error)) |>
+  mutate(trait = "leaf_area",
+         # Convert to cm^2
+         value = value/100,
+         unit = "cm2")
+
+leda.sla = read.csv("raw_data/LEDA/LEDA_SLA.csv") |>
+  rename(species = SBS.name, spp.nr = SBS.number, value = single.value..mm.2.mg.) |>
+  select(-c(mean.SLA..mm.2.mg.,maximum.SLA..mm.2.mg., minimum.SLA..mm.2.mg.,
+            number.of.replicates, standard.deviation, standard.error)) |>
+  mutate(trait = "SLA",
+         # Convert to cm^2
+         value = value/1000,
+         unit = "cm2/g")
+
+## Join to one dataframe ----
+leda = leda.height |>
+  bind_rows(leda.ldmc, leda.leafmass, leda.leafsize, leda.sla)
+
