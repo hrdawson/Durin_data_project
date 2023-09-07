@@ -67,7 +67,8 @@ tagcount = specieslist |>
 relevant.tags = c("extractable data", "leaf year",
                   "sampling month", "sampling season",
                   "extractable data", "habitat type",
-                  "Lit:", "measurement type",
+                  # "Lit:",
+                  "measurement type",
                   "trait:", "database source:", "database:")
 
 # Filter lit review for visualizations
@@ -99,7 +100,45 @@ lit.review = map(relevant.tags, str_subset, string = tagcount$tag) %>%
          variable = str_replace(variable, "VV ", ""))
 
 # Check that all fields are filled out for each study ----
+## Complete list of relevant tags ----
+alltags = map(relevant.tags, str_subset, string = tagcount$tag) %>%
+  reduce(union)
+## List of studies with actual measurements ----
+actuallist = tempLitReview |>
+  filter(tag == "measurement type: actual") |>
+  # Unique identifier
+  select(Key) |>
+  distinct() |>
+  pull()
 
+## Create object to check ----
+studies.actual = specieslist |>
+  right_join(tempLitReview) |>
+  # Filter out irrelevant articles
+  drop_na(species) |>
+  # Filter to studies with leaf traits
+  filter(Key %in% keeplist) |>
+  # Filter to studies with actual measurements
+  filter(Key %in% actuallist) |>
+  # Filter to relevant tags
+  filter(tag %in% alltags) |>
+  distinct() |>
+  # Separate out variables
+  separate(tag, into = c("variable", "value"), sep = ":") |>
+  # Filter out the wrong species ones
+  mutate(drop = case_when(
+    str_starts(variable, "EN") & species == "Vaccinium vitis-idaea" ~ "cut",
+    str_starts(variable, "VV") & species == "Empetrum nigrum" ~ "cut",
+    TRUE ~ "keep"
+  )) |>
+  filter(drop == "keep") |>
+  select(-drop) |>
+  # # Modify variable names
+  # mutate(variable = str_replace(variable, "EN ", ""),
+  #        variable = str_replace(variable, "VV ", "")) |>
+  # Pivot to see completeness
+  select(-species) |>
+  pivot_wider(names_from = "variable", values_from = "value", values_fill = NA)
 
 # Visualize ----
 ## Calculate by percentage ----
