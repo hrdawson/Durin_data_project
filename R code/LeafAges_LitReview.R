@@ -90,3 +90,21 @@ lit.review = map(relevant.tags, str_subset, string = tagcount$tag) %>%
   # Modify variable names
   mutate(variable = str_replace(variable, "EN ", ""),
          variable = str_replace(variable, "VV ", ""))
+
+# Visualize ----
+## Calculate by percentage ----
+litreview.percents = lit.review |>
+  filter(variable != "Lit") |>
+  group_by(species, variable) |>
+  summarize(total = sum(n)) |>
+  ungroup() |>
+  left_join(lit.review) |>
+  mutate(percent = (n/total))
+
+# All variable by species in stacked barchart
+ggplot(litreview.percents, aes(x = variable, y = percent, fill = value)) +
+  geom_bar(position="fill", stat="identity") +
+  geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.5)) +
+  facet_grid(~species) +
+  theme_bw() +
+  theme(legend.position = "none")
