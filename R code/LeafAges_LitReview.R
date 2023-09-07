@@ -35,12 +35,12 @@ keycheck = tempLitReview |>
   # This one should say `distinct: no rows removed`
   distinct()
 
-# This is inaccurate as we have the exact same number of EN and VV studies
 specieslist = tempLitReview |>
   filter(tag == "Empetrum nigrum" | tag == "Vaccinium vitis-idaea") |>
   # Unique identifier
   select(Key, tag) |>
-  rename(species = tag)
+  rename(species = tag) |>
+  distinct()
 
 # Summarize counts of each tag ----
 tagcount = specieslist |>
@@ -78,7 +78,15 @@ lit.review = map(relevant.tags, str_subset, string = tagcount$tag) %>%
   # Remove extraneous variable info
   # mutate(variable = str_replace(variable, "EN ", ""),
   #        variable = str_replace(variable, "VV ", "")) |>
-  relocate(species, variable, value, n)
-
-# Something isn't working with the species joining
-# Everything is labelled Empetrum
+  relocate(species, variable, value, n) |>
+  # Filter out the wrong species ones
+  mutate(drop = case_when(
+    str_starts(variable, "EN") & species == "Vaccinium vitis-idaea" ~ "cut",
+    str_starts(variable, "VV") & species == "Empetrum nigrum" ~ "cut",
+    TRUE ~ "keep"
+  )) |>
+  filter(drop == "keep") |>
+  select(-drop) |>
+  # Modify variable names
+  mutate(variable = str_replace(variable, "EN ", ""),
+         variable = str_replace(variable, "VV ", ""))
