@@ -42,18 +42,28 @@ specieslist = tempLitReview |>
   rename(species = tag) |>
   distinct()
 
+# Make list of articles to include ----
+keeplist = tempLitReview |>
+  filter(tag == "leaf traits") |>
+  #Unique identifier
+  pull(Key)
+
 # Summarize counts of each tag ----
 tagcount = specieslist |>
   right_join(tempLitReview) |>
     # Filter out irrelevant articles
     drop_na(species) |>
+  # Filter to studies with leaf traits
+  filter(Key %in% keeplist) |>
 # remove leading spaces
     mutate(tag = str_trim(tag)) |>
   group_by(species, tag) |>
   summarize(n = length(Key)) |>
   ungroup() |>
   mutate_all(na_if,"") |>
-  drop_na(tag)
+  drop_na(tag) |>
+  # Filter out the phantom tags
+  filter(!tag %in% c("extractable data: full dataset", "extractable data: no"))
 
 # List all the tags that are relevant to my review
 relevant.tags = c("extractable data", "leaf year",
@@ -71,8 +81,6 @@ lit.review = map(relevant.tags, str_subset, string = tagcount$tag) %>%
   rename(tag = "map(relevant.tags, str_subset, string = tagcount$tag) %>% reduce(union)") |>
   # Bring back in counts
   left_join(tagcount) |>
-  # Filter out the phantom tags
-  filter(!tag %in% c("extractable data: full dataset", "extractable data: no")) |>
   # Separate out variables
   separate(tag, into = c("variable", "value"), sep = ":") |>
   # Remove extraneous variable info
@@ -102,9 +110,13 @@ litreview.percents = lit.review |>
   mutate(percent = (n/total))
 
 # All variable by species in stacked barchart
-ggplot(litreview.percents, aes(x = variable, y = percent, fill = value)) +
-  geom_bar(position="fill", stat="identity") +
+ggplot(litreview.percents, aes(x = species, y = percent, fill = value)) +
+  geom_bar(position="fill", stat="identity", color = "black") +
   geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.5)) +
-  facet_grid(~species) +
+  facet_grid(~variable) +
+  labs(x = "") +
   theme_bw() +
-  theme(legend.position = "none")
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
+
+ggsave("visualizations/2023.09.06_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
