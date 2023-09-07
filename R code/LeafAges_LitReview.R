@@ -18,7 +18,12 @@ tempLitReview <- map_df(set_names(filesLitReview), function(file) {
   tidyr::separate_wider_delim(tags, delim = ";", names_sep = "X", too_few = "align_start") |>
   # Pivot tags
   pivot_longer(cols = tagsX1:tagsX42, names_to = "X", values_to = "tag") |>
-  select(-X)
+  select(-X) |>
+  drop_na(tag) |>
+  # remove leading spaces
+  mutate(tag = str_trim(tag))
+
+tempLitReview.tags = as.data.frame(table(tempLitReview$tag))
 
 # Make summary of which papers belong to which species ----
 # First, check that keys are unique
@@ -30,27 +35,23 @@ keycheck = tempLitReview |>
   # This one should say `distinct: no rows removed`
   distinct()
 
+# This is inaccurate as we have the exact same number of EN and VV studies
 specieslist = tempLitReview |>
-  filter(tag %in% c("Empetrum nigrum", "Vaccinium vitis-idaea")) |>
-  # Unique identifierd
+  filter(tag == "Empetrum nigrum" | tag == "Vaccinium vitis-idaea") |>
+  # Unique identifier
   select(Key, tag) |>
-  rename(species = tag) |>
-  distinct()
-  # Some studies have multiple species
-  # So this will have to have its own column
-  distinct() |>
-  mutate(placeholder = 1) |>
-  pivot_wider(names_from = tag, values_from = placeholder)
+  rename(species = tag)
 
 # Summarize counts of each tag ----
-tagcount = tempLitReview |>
-  left_join(specieslist) |>
+tagcount = specieslist |>
+  right_join(tempLitReview) |>
     # Filter out irrelevant articles
     drop_na(species) |>
 # remove leading spaces
     mutate(tag = str_trim(tag)) |>
   group_by(species, tag) |>
   summarize(n = length(Key)) |>
+  ungroup() |>
   mutate_all(na_if,"") |>
   drop_na(tag)
 
