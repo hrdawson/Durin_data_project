@@ -55,8 +55,6 @@ tagcount = specieslist |>
     drop_na(species) |>
   # Filter to studies with leaf traits
   filter(Key %in% keeplist) |>
-# remove leading spaces
-    mutate(tag = str_trim(tag)) |>
   group_by(species, tag) |>
   summarize(n = length(Key)) |>
   ungroup() |>
@@ -69,7 +67,8 @@ tagcount = specieslist |>
 relevant.tags = c("extractable data", "leaf year",
                   "sampling month", "sampling season",
                   "extractable data", "habitat type",
-                  "Lit:", "measurement type")
+                  "Lit:", "measurement type",
+                  "trait:", "database source:", "database:")
 
 # Filter lit review for visualizations
 # This is inelegant but appears to work
@@ -98,6 +97,9 @@ lit.review = map(relevant.tags, str_subset, string = tagcount$tag) %>%
   # Modify variable names
   mutate(variable = str_replace(variable, "EN ", ""),
          variable = str_replace(variable, "VV ", ""))
+
+# Check that all fields are filled out for each study ----
+
 
 # Visualize ----
 ## Calculate by percentage ----
