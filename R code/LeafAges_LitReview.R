@@ -82,7 +82,7 @@ relevant.tags = c("extractable data", "leaf year",
                   "measurement type",
                   "trait:", "database source:", "database:",
                   "location:", "study")
-
+#
 # Filter lit review for visualizations
 # This is inelegant but appears to work
 # From https://gist.github.com/simmwill/dc34d71c2da8f644576afa20cca3bbef
