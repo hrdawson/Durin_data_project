@@ -162,7 +162,7 @@ litreview.percents = lit.review |>
   summarize(total = sum(n)) |>
   ungroup() |>
   left_join(lit.review) |>
-  mutate(percent = (n/total))
+  mutate(percent = round((n/total), 2))
 
 litreview.levels.value = c(
   # measurement
@@ -204,7 +204,8 @@ ggplot(litreview.percents |>
                 variable = factor(variable, levels = litreview.levels.variable)),
        aes(x = species, y = percent, fill = value)) +
   geom_bar(position="fill", stat="identity", color = "black") +
-  geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.5)) +
+  geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.7)) +
+  geom_text(aes(label = n), size = 3, position = position_stack(vjust = 0.3)) +
   facet_grid(~variable) +
   labs(x = "", y = "Percent of studies") +
   theme_bw() +
@@ -219,6 +220,10 @@ TRY.sum = trydata |>
   summarize(n = length(trait)) |>
   pivot_wider(names_from = species, values_from = n) |>
   arrange(trait)
+
+TRY.sum.spp = TRY.sum |>
+  group_by(`Empetrum nigrum`, `Vaccinium vitis-idaea`) |>
+  summarize(n = sum())
 
 write.csv(TRY.sum, "output/2023.09.08_TRY summary.csv")
 
@@ -242,8 +247,7 @@ write.csv(TTT.sum, "output/2023.09.08_TTT summary.csv")
 
 leda.sum = leda |>
   filter(species == "Vaccinium vitis-idaea" | genus == "Empetrum")  |>
-  filter(general.method %in% c("actual measurement", "actual measurement (following LEDA data standards)",
-                               "unknown")) |>
+  filter(general.method %in% c("actual measurement", "actual measurement (following LEDA data standards)")) |>
   filter(trait != "plant_height") |>
   group_by(genus, trait) |>
   summarize(n = length(trait)) |>
