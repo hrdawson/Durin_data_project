@@ -212,3 +212,42 @@ ggplot(litreview.percents |>
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
 ggsave("visualizations/2023.09.08_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
+
+# Make table of available database info ----
+TRY.sum = trydata |>
+  group_by(species, trait) |>
+  summarize(n = length(trait)) |>
+  pivot_wider(names_from = species, values_from = n) |>
+  arrange(trait)
+
+write.csv(TRY.sum, "output/2023.09.08_TRY summary.csv")
+
+TTT.sum = tundratraits |>
+  filter(AccSpeciesName == "Empetrum nigrum" | AccSpeciesName == "Vaccinium vitis-idaea") |>
+  group_by(AccSpeciesName, Trait) |>
+  summarize(n = length(Trait)) |>
+  pivot_wider(names_from = AccSpeciesName, values_from = n) |>
+  mutate(trait = case_when(
+    Trait == "Leaf area" ~ "leaf_area",
+    Trait == "Leaf area per leaf dry mass (specific leaf area, SLA)" ~ "SLA",
+    Trait == "Leaf dry mass per leaf fresh mass (Leaf dry matter content, LDMC)" ~ "LDMC",
+    Trait == "Leaf dry mass" ~ "dry_mass_g",
+    TRUE ~ "Unknown"
+  )) |>
+  filter(trait != "Unknown") |>
+  select(trait, "Empetrum nigrum", "Vaccinium vitis-idaea") |>
+  arrange(trait)
+
+write.csv(TTT.sum, "output/2023.09.08_TTT summary.csv")
+
+leda.sum = leda |>
+  filter(species == "Vaccinium vitis-idaea" | genus == "Empetrum")  |>
+  filter(general.method %in% c("actual measurement", "actual measurement (following LEDA data standards",
+                               "unknown")) |>
+  filter(trait != "plant_height") |>
+  group_by(genus, trait) |>
+  summarize(n = length(trait)) |>
+  pivot_wider(names_from = genus, values_from = n) |>
+  arrange(trait)
+
+write.csv(leda.sum, "output/2023.09.08_LEDA summary.csv")
