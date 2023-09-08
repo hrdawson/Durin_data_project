@@ -186,24 +186,29 @@ litreview.levels.value = c(
   "unspecified")
 
 litreview.levels.value = c(
-  "actual", "February", "winter", "both", "both (alternate)", "no", "Canada", "general literature",
+  "unspecified", "actual", "February", "winter", "both", "both (alternate)", "no", "Canada", "general literature",
   "leaf area", "database", "March", "spring", "open", "both (concurrent)", "dataset", "Eurasia",
   "EcoFlora", "leaf mass", "April", "early summer", "forested", "current", "means", "Finland",
   "Shidakov2007", "leaf thickness", "May", "late summer", "previous", "Japan", "LEDA", "LDMC",
   "June", "autumn", "Norway", "TRY", "LMA", "July", "Russia", "August", "Sweden", "SLA",
-  "September", "unspecified"
+  "September"
 )
+
+litreview.levels.variable = c("measurement type", "leaf year", "sampling month", "sampling season",
+                              "trait", "habitat type", "location", "database")
 
 # All variable by species in stacked barchart
 ggplot(litreview.percents |>
-         filter(!variable %in% c("database source", "study")) |>
-         mutate(value = factor(value, levels = litreview.levels.value)), aes(x = species, y = percent, fill = value)) +
+         filter(!variable %in% c("database source", "study", "extractable data")) |>
+         mutate(value = factor(value, levels = litreview.levels.value),
+                variable = factor(variable, levels = litreview.levels.variable)),
+       aes(x = species, y = percent, fill = value)) +
   geom_bar(position="fill", stat="identity", color = "black") +
   geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.5)) +
   facet_grid(~variable) +
-  labs(x = "") +
+  labs(x = "", y = "Percent of studies") +
   theme_bw() +
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
-ggsave("visualizations/2023.09.07_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
+ggsave("visualizations/2023.09.08_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
