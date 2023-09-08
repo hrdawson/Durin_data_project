@@ -49,7 +49,7 @@ leda = leda.height |>
 # Narrow to Empetrum ----
 leda.en = leda |>
   filter(genus == "Empetrum") |>
-  filter(general.method %in% c("actual measurement", "actual measurement (following LEDA data standards",
+  filter(general.method %in% c("actual measurement", "actual measurement (following LEDA data standards)",
                                "unknown"))
 
 table(leda.en$trait)
@@ -57,7 +57,7 @@ table(leda.en$trait)
 # Narrow to vitis-idaea ----
 leda.vv = leda |>
   filter(species == "Vaccinium vitis-idaea") |>
-  filter(general.method %in% c("actual measurement", "actual measurement (following LEDA data standards",
+  filter(general.method %in% c("actual measurement", "actual measurement (following LEDA data standards)",
                                "unknown"))
 
 table(leda.vv$trait)
