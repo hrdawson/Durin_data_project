@@ -44,9 +44,18 @@ specieslist = tempLitReview |>
 
 # Make list of articles to include ----
 keeplist = tempLitReview |>
+  # Filter to the tag with all the studies of interest
   filter(tag == "leaf morphological traits") |>
+  # Filter out the duplicate studies
+  filter(!Key %in% c("5DJJGLCC", "4EWK5C7D")) |>
   #Unique identifier
   pull(Key)
+
+list = as.data.frame(keeplist) |>
+  rename(Key = keeplist) |>
+  inner_join(specieslist)
+
+table(list$species)
 
 # Summarize counts of each tag ----
 tagcount = specieslist |>
@@ -86,6 +95,9 @@ lit.review = map(relevant.tags, str_subset, string = tagcount$tag) %>%
   left_join(tagcount) |>
   # Separate out variables
   separate(tag, into = c("variable", "value"), sep = ":") |>
+  # Remove the white space
+  mutate(variable = str_trim(variable),
+         value = str_trim(value)) |>
   # Filter out leaf nitrogen as a trait
   filter(value != "leaf nitrogen") |>
   relocate(species, variable, value, n) |>
@@ -152,8 +164,40 @@ litreview.percents = lit.review |>
   left_join(lit.review) |>
   mutate(percent = (n/total))
 
+litreview.levels.value = c(
+  # measurement
+  "actual", "database",
+  #sampling month
+  "February", "March", "April", "May", "June", "July", "August", "September",
+  #sampling season
+  "winter", "spring", "early summer", "late summer", "autumn",
+  #habitat type
+  "both", "open", "forested",
+  # leaf year
+  "both (alternate)", "both (concurrent)", "current", "previous",
+  # data extractable
+  "no", "dataset", "means",
+  # country
+  "Canada", "Eurasia", "Finland", "Japan", "Norway", "Russia", "Sweden",
+  # database
+  "general literature", "EcoFlora", "Shidakov2007", "LEDA", "TRY",
+  # traits
+  "leaf area", "leaf mass", "leaf thickness", "LDMC", "LMA", "SLA",
+  "unspecified")
+
+litreview.levels.value = c(
+  "actual", "February", "winter", "both", "both (alternate)", "no", "Canada", "general literature",
+  "leaf area", "database", "March", "spring", "open", "both (concurrent)", "dataset", "Eurasia",
+  "EcoFlora", "leaf mass", "April", "early summer", "forested", "current", "means", "Finland",
+  "Shidakov2007", "leaf thickness", "May", "late summer", "previous", "Japan", "LEDA", "LDMC",
+  "June", "autumn", "Norway", "TRY", "LMA", "July", "Russia", "August", "Sweden", "SLA",
+  "September", "unspecified"
+)
+
 # All variable by species in stacked barchart
-ggplot(litreview.percents, aes(x = species, y = percent, fill = value)) +
+ggplot(litreview.percents |>
+         filter(!variable %in% c("database source", "study")) |>
+         mutate(value = factor(value, levels = litreview.levels.value)), aes(x = species, y = percent, fill = value)) +
   geom_bar(position="fill", stat="identity", color = "black") +
   geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.5)) +
   facet_grid(~variable) +
