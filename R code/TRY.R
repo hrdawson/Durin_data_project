@@ -1,15 +1,19 @@
 library(rtry)
 
 # Read in TRY data ----
-trydata = read.csv("raw_data/TRY/28371.csv") |>
+trydata = read.csv("raw_data/TRY/28661.csv") |>
+  mutate(OrigUncertaintyStr = as.character(OrigUncertaintyStr)) |>
+  bind_rows(read.csv("raw_data/TRY/28371.csv")) |>
   bind_rows(read.csv("raw_data/TRY/28390.csv")) |>
-  filter(TraitID %in% c(1, 3110, 3112, 3114, 11, 3116, 3117, 3106, 46)) |>
+  filter(TraitID %in% c(1, 3110, 3112, 3114, 11, 3116, 3117, 3106, 46, 47, 55)) |>
   # Assign same trait names as DURIN
   mutate(trait = case_when(
     TraitID %in% c(1, 3110, 3112, 3114) ~ "leaf_area",
     TraitID %in% c(11, 3116, 3117) ~ "SLA",
     TraitID == 3106 ~ "plant_height",
     TraitID == 46 ~ "leaf_thickness",
+    TraitID == 47 ~ "LDMC",
+    TraitID == 55 ~ "dry_mass_g",
     TRUE ~ "Unknown"
   )) |>
   # Standardize species names
@@ -22,6 +26,8 @@ trydata = read.csv("raw_data/TRY/28371.csv") |>
     trait == "plant_height" ~ StdValue * 100,
     TRUE ~ StdValue
   )) |>
+  # Remove plant height (for now)
+  filter(trait != "plant_height") |>
   # Specify dataset
   mutate(dataset = "TRY",
          leaf_age = "database") |>
@@ -29,6 +35,8 @@ trydata = read.csv("raw_data/TRY/28371.csv") |>
   filter(ErrorRisk < 4) |>
   # Remove duplicates
   rtry_remove_dup() |>
+  # Remove datasets we're extracting directly
+  filter(!Dataset %in% c("The LEDA Traitbase", "Tundra Trait Team"))
   # Select relevant columns
   select(ObservationID, species, trait, StdValue, dataset, leaf_age) |>
   # Standardize column names
