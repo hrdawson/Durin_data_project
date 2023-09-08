@@ -13,7 +13,7 @@ tempLitReview <- map_df(set_names(filesLitReview), function(file) {
   mutate(tags = paste0(Manual.Tags, ";", Automatic.Tags),
          tags = str_replace(tags, "; ", ";")) |>
   # Drop unnecessary columns
-  select(Key, Publication.Year, Publication.Title, Title, tags) |>
+  select(Key, Author, Publication.Year, Publication.Title, Title, tags) |>
   # Split so that each tag is its own column
   tidyr::separate_wider_delim(tags, delim = ";", names_sep = "X", too_few = "align_start") |>
   # Pivot tags
@@ -44,7 +44,7 @@ specieslist = tempLitReview |>
 
 # Make list of articles to include ----
 keeplist = tempLitReview |>
-  filter(tag == "leaf traits") |>
+  filter(tag == "leaf morphological traits") |>
   #Unique identifier
   pull(Key)
 
@@ -55,6 +55,8 @@ tagcount = specieslist |>
     drop_na(species) |>
   # Filter to studies with leaf traits
   filter(Key %in% keeplist) |>
+  distinct() |>
+  # Group and count
   group_by(species, tag) |>
   summarize(n = length(Key)) |>
   ungroup() |>
@@ -69,7 +71,8 @@ relevant.tags = c("extractable data", "leaf year",
                   "extractable data", "habitat type",
                   # "Lit:",
                   "measurement type",
-                  "trait:", "database source:", "database:")
+                  "trait:", "database source:", "database:",
+                  "location:", "study")
 
 # Filter lit review for visualizations
 # This is inelegant but appears to work
@@ -83,9 +86,8 @@ lit.review = map(relevant.tags, str_subset, string = tagcount$tag) %>%
   left_join(tagcount) |>
   # Separate out variables
   separate(tag, into = c("variable", "value"), sep = ":") |>
-  # Remove extraneous variable info
-  # mutate(variable = str_replace(variable, "EN ", ""),
-  #        variable = str_replace(variable, "VV ", "")) |>
+  # Filter out leaf nitrogen as a trait
+  filter(value != "leaf nitrogen") |>
   relocate(species, variable, value, n) |>
   # Filter out the wrong species ones
   mutate(drop = case_when(
@@ -160,4 +162,4 @@ ggplot(litreview.percents, aes(x = species, y = percent, fill = value)) +
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
-ggsave("visualizations/2023.09.06_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
+ggsave("visualizations/2023.09.07_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
