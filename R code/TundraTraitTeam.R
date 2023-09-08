@@ -1,5 +1,7 @@
 # Examine this new dataset ----
-tundratraits = read.csv("raw_data/TundraTraitTeam/TTT_cleaned_dataset_v1.csv")
+tundratraits = read.csv("raw_data/TundraTraitTeam/TTT_cleaned_dataset_v1.csv") |>
+  # Filter based on error risk < 4
+filter(ErrorRisk < 4)
 
 TTT.EN = tundratraits |>
   filter(AccSpeciesName == "Empetrum nigrum")
