@@ -1,3 +1,5 @@
+library(rtry)
+
 # Read in TRY data ----
 trydata = read.csv("raw_data/TRY/28371.csv") |>
   bind_rows(read.csv("raw_data/TRY/28390.csv")) |>
@@ -23,16 +25,25 @@ trydata = read.csv("raw_data/TRY/28371.csv") |>
   # Specify dataset
   mutate(dataset = "TRY",
          leaf_age = "database") |>
+  # Filter based on error risk < 4
+  filter(ErrorRisk < 4) |>
+  # Remove duplicates
+  rtry_remove_dup() |>
   # Select relevant columns
   select(ObservationID, species, trait, StdValue, dataset, leaf_age) |>
   # Standardize column names
   rename(Envelope_ID = ObservationID, value = StdValue)
 
-table(trydata$TraitName)
-table(trydata$DataName)
+table(trydata$trait)
+table(trydata$dataset)
 
 TRY.EN = trydata |>
   filter(species == "Empetrum nigrum") |>
+  group_by(trait) |>
+  summarize(n = length(trait))
+
+TRY.VV = trydata |>
+  filter(species == "Vaccinium vitis-idaea") |>
   group_by(trait) |>
   summarize(n = length(trait))
 
