@@ -56,7 +56,7 @@ TRY.VV = trydata |>
   summarize(n = length(trait))
 
 # Read in DURIN data ----
-durin.subset.try = read.csv("output/2023.08.16_cleanDURIN.csv") %>%
+durin.subset.try = read.csv("output/2023.09.08_cleanDURIN.csv") %>%
   # Filter to relevant data
   filter(species %in% c("Vaccinium vitis-idaea", "Empetrum nigrum")) |>
   filter(siteID == "Lygra") |>
