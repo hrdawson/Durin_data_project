@@ -21,9 +21,12 @@ trydata = read.csv("raw_data/TRY/28661.csv") |>
     AccSpeciesID == 20484 ~ "Empetrum nigrum",
     AccSpeciesID == 55754 ~ "Vaccinium vitis-idaea"
   )) |>
-  # Convert plant height to centimeters
+  # Standardize units
   mutate(StdValue = case_when(
     trait == "plant_height" ~ StdValue * 100,
+    trait == "SLA" ~ StdValue * 10,
+    trait == "leaf_area" ~ StdValue / 100,
+    trait == "dry_mass_g" ~ StdValue / 1000,
     TRUE ~ StdValue
   )) |>
   # Remove plant height (for now)
@@ -43,7 +46,7 @@ trydata = read.csv("raw_data/TRY/28661.csv") |>
   rename(Envelope_ID = ObservationID, value = StdValue)
 
 table(trydata$trait)
-table(trydata$dataset)
+table(trydata$Dataset)
 
 TRY.EN = trydata |>
   filter(species == "Empetrum nigrum") |>

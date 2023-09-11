@@ -38,7 +38,7 @@ leda.sla = read.csv("raw_data/LEDA/LEDA_SLA.csv") |>
             number.of.replicates, standard.deviation, standard.error)) |>
   mutate(trait = "SLA",
          # Convert to cm^2
-         value = value/1000,
+         value = value * 10,
          unit = "cm2/g")
 
 ## Join to one dataframe ----
@@ -59,3 +59,19 @@ leda.vv = leda |>
   filter(general.method %in% c("actual measurement", "actual measurement (following LEDA data standards)"))
 
 table(leda.vv$trait)
+
+# Make dataframe that matches other datasets ----
+leda.join = leda |>
+  # Filter to relevant data
+  filter(genus == "Empetrum" | species == "Vaccinium vitis-idaea") |>
+  filter(general.method %in% c("actual measurement",
+                               "actual measurement (following LEDA data standards)")) |>
+  # Update Empetrum name
+  mutate(species = case_when(
+    genus == "Empetrum" ~ "Empetrum nigrum",
+    TRUE ~ species)) |>
+  # Select relevant data
+  select(species, trait, value) |>
+  # Add database info
+  mutate(leaf_age = "database",
+         dataset = "LEDA")

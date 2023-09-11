@@ -8,11 +8,42 @@ TTT.EN = tundratraits |>
 
 table(TTT.EN$Trait)
 
-
 TTT.VV = tundratraits |>
   filter(AccSpeciesName == "Vaccinium vitis-idaea")
 
 table(TTT.VV$Trait)
+
+# Make dataframe that matches other datasets ----
+tundratraits.join = tundratraits |>
+  # Filter to relevant species
+  filter(AccSpeciesName == "Empetrum nigrum" | AccSpeciesName == "Vaccinium vitis-idaea") |>
+  ## To be used in the future but DURIN doesn't have all of these yet
+  filter(Trait %in% c("Leaf area", "Leaf area per leaf dry mass (specific leaf area, SLA)", "Leaf dry mass",
+                      "Leaf dry mass per leaf fresh mass (Leaf dry matter content, LDMC", "Leaf fresh mass",
+                      "Plant height, vegetative")) |>
+  # Assign same trait names as DURIN
+  mutate(trait = case_when(
+    Trait == "Leaf area" ~ "leaf_area",
+    Trait == "Leaf area per leaf dry mass (specific leaf area, SLA)" ~ "SLA",
+    Trait == "Plant height, vegetative" ~ "plant_height",
+    Trait == "Leaf fresh mass" ~ "wet_mass_g",
+    TRUE ~ "Unknown"
+  )) |>
+  # Convert units
+  mutate(Value = case_when(
+    trait == "plant_height" ~ Value * 100,
+    trait == "leaf_area" ~ Value / 100,
+    trait == "SLA" ~ Value * 10,
+    TRUE ~ Value
+  )) |>
+  # Specify dataset
+  mutate(dataset = "TTT",
+         leaf_age = "database") |>
+  # Select relevant columns
+  select(IndividualID, AccSpeciesName, trait, Value, dataset, leaf_age) |>
+  # Standardize column names
+  rename(Envelope_ID = IndividualID, value = Value, species = AccSpeciesName)
+
 
 # Look at variance ----
 ## Empetrum ----
