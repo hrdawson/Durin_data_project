@@ -1,6 +1,7 @@
 # Bring together the outside datasets with the DURIN dataset
 
-DURIN.lit = read.csv("output/2023.09.08_cleanDURIN.csv") %>%
+DURIN.lit = read.csv("output/2023.09.11_cleanDURIN.csv") %>%
+  select(-dry_mass_g) |>
   # Add in prelim dry mass data
   left_join(read.csv("raw_data/2023.09.11_DURIN_drymass.csv")) |>
   # Filter to relevant data
@@ -11,9 +12,8 @@ DURIN.lit = read.csv("output/2023.09.08_cleanDURIN.csv") %>%
   # Add DURIN field
   mutate(dataset = "DURIN") |>
   # Select columns for quick comparison
-  relocate(c(leaf_area, bulk_nr_leaves_clean, SLA.wet), .after = plant_height) |>
+  relocate(c(leaf_area, bulk_nr_leaves_clean, SLA.wet, dry_mass_g), .after = plant_height) |>
   select(-bulk_nr_leaves) |>
-  relocate(dry_mass_g, .after = wet_mass_g) |>
   select(envelope_ID, species, dataset, leaf_age:leaf_thickness_3_mm) |>
   # Calculate individual leaf values
   mutate(leaf_area = leaf_area/bulk_nr_leaves_clean,
@@ -65,11 +65,11 @@ ggplot(DURIN.lit |> filter(trait == "leaf_thickness") |>
 
 ## Dry mass
 ggplot(DURIN.lit |> filter(trait == "dry_mass_g") |>
-         drop_na(leaf_age) |> filter(value < 1),
+         drop_na(leaf_age),
        aes(interaction(leaf_age, species), y = value,fill = dataset)) +
   geom_boxplot() +
   scale_x_discrete(guide = "axis_nested") +
   # scale_y_log10() +
-  # facet_wrap(~ species, scales = "free") +
+  facet_wrap(~ species, scales = "free") +
   # labs(title = "Leaf thickness") +
   theme_bw()
