@@ -36,7 +36,7 @@ trydata = read.csv("raw_data/TRY/28661.csv") |>
   # Remove duplicates
   rtry_remove_dup() |>
   # Remove datasets we're extracting directly
-  filter(!Dataset %in% c("The LEDA Traitbase", "Tundra Trait Team"))
+  filter(!Dataset %in% c("The LEDA Traitbase", "Tundra Trait Team")) |>
   # Select relevant columns
   select(ObservationID, species, trait, StdValue, dataset, leaf_age) |>
   # Standardize column names
@@ -65,7 +65,14 @@ durin.subset.try = read.csv("output/2023.09.08_cleanDURIN.csv") %>%
   # Add DURIN field
   mutate(dataset = "DURIN") |>
   # Select columns for quick comparison
+  relocate(c(leaf_area, bulk_nr_leaves_clean, SLA.wet), .after = plant_height) |>
+  select(-bulk_nr_leaves) |>
   select(envelope_ID, species, dataset, leaf_age:leaf_thickness_3_mm) |>
+  # Calculate individual leaf values
+  mutate(leaf_area = leaf_area/bulk_nr_leaves_clean,
+         wet_mass_g = wet_mass_g/bulk_nr_leaves_clean) |>
+  # Rename SLA for now
+  rename(SLA = SLA.wet) |>
   # Tidy in long form
   pivot_longer(cols = plant_height:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
   # Standardize traits
@@ -104,3 +111,14 @@ ggplot(durin.try |> filter(trait == "plant_height"),
   theme_bw()
 
 ggsave("visualizations/durin.try_plantheight.png")
+
+# Specific leaf area
+## CAUTION: SLA for DURIN is calculated with wet mass
+
+ggplot(durin.try |> filter(trait == "SLA") |>
+         drop_na(leaf_age) |> filter(value < 100),
+       aes(interaction(leaf_age, species), y = value)) +
+  geom_boxplot() +
+  scale_x_discrete(guide = "axis_nested") +
+  labs(title = "Leaf thickness") +
+  theme_bw()
