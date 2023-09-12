@@ -31,6 +31,7 @@ DURIN.lit = read.csv("output/2023.09.11_cleanDURIN.csv") %>%
   bind_rows(tundratraits.join, leda.join, trydata)
 
 # Visualize ----
+library(ggh4x)
 ## Leaf area
 ggplot(DURIN.lit |> filter(trait == "leaf_area") |>
          drop_na(leaf_age) |> filter(value < 10),
