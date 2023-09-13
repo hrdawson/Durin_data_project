@@ -10,17 +10,19 @@ DURIN.lit = read.csv("output/2023.09.11_cleanDURIN.csv") %>%
   # filter(project == "Field - Traits") |>
   # filter(DroughtTrt %in% c(NA, "Amb (0)")) |>
   # Add DURIN field
-  mutate(dataset = "DURIN") |>
+  mutate(dataset = "DURIN",
+         SLA.dry = leaf_area/dry_mass_g) |>
   # Select columns for quick comparison
-  relocate(c(leaf_area, bulk_nr_leaves_clean, SLA.wet, dry_mass_g), .after = plant_height) |>
-  select(-bulk_nr_leaves) |>
+  relocate(c(leaf_area, bulk_nr_leaves_clean, SLA.wet, SLA.dry, dry_mass_g), .after = plant_height) |>
   select(envelope_ID, species, dataset, leaf_age:leaf_thickness_3_mm) |>
+  select(-bulk_nr_leaves) |>
   # Calculate individual leaf values
   mutate(leaf_area = leaf_area/bulk_nr_leaves_clean,
          wet_mass_g = wet_mass_g/bulk_nr_leaves_clean,
          dry_mass_g = dry_mass_g/bulk_nr_leaves_clean) |>
   # Rename SLA for now
-  rename(SLA = SLA.wet) |>
+  # rename(SLA = SLA.wet) |>
+  rename(SLA = SLA.dry) |>
   # Tidy in long form
   pivot_longer(cols = plant_height:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
   # Standardize traits
@@ -29,6 +31,16 @@ DURIN.lit = read.csv("output/2023.09.11_cleanDURIN.csv") %>%
                          "leaf_thickness")) |>
   # Add in external datasets
   bind_rows(tundratraits.join, leda.join, trydata)
+
+## Check which leaves have dry mass so far
+durin.dry.check = read.csv("output/2023.09.11_cleanDURIN.csv") %>%
+  select(-dry_mass_g) |>
+  # Add in prelim dry mass data
+  left_join(read.csv("raw_data/2023.09.11_DURIN_drymass.csv")) |>
+  drop_na(dry_mass_g)
+
+table(durin.dry.check$siteID)
+table(durin.dry.check$species)
 
 # Visualize ----
 library(ggh4x)
