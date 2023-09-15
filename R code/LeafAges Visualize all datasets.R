@@ -11,9 +11,12 @@ DURIN.lit = read.csv("output/2023.09.11_cleanDURIN.csv") %>%
   # filter(DroughtTrt %in% c(NA, "Amb (0)")) |>
   # Add DURIN field
   mutate(dataset = "DURIN",
-         SLA.dry = leaf_area/dry_mass_g) |>
+         # Calculate SLA with dry weights
+         SLA.dry = leaf_area/dry_mass_g,
+         # Calculate LDMC
+         LDMC = dry_mass_g/wet_mass_g) |>
   # Select columns for quick comparison
-  relocate(c(leaf_area, bulk_nr_leaves_clean, SLA.wet, SLA.dry, dry_mass_g), .after = plant_height) |>
+  relocate(c(leaf_area, bulk_nr_leaves_clean, SLA.wet, SLA.dry, dry_mass_g, LDMC), .after = plant_height) |>
   select(envelope_ID, species, dataset, leaf_age:leaf_thickness_3_mm) |>
   select(-bulk_nr_leaves) |>
   # Calculate individual leaf values
@@ -44,6 +47,7 @@ table(durin.dry.check$species)
 
 # Visualize ----
 library(ggh4x)
+
 ## Leaf area
 ggplot(DURIN.lit |> filter(trait == "leaf_area") |>
          drop_na(leaf_age) |> filter(value < 10),
@@ -78,6 +82,19 @@ ggplot(DURIN.lit |> filter(trait == "leaf_thickness") |>
 
 ## Dry mass
 ggplot(DURIN.lit |> filter(trait == "dry_mass_g") |>
+         drop_na(leaf_age),
+       aes(interaction(leaf_age, species), y = value,fill = dataset)) +
+  geom_boxplot() +
+  scale_x_discrete(guide = "axis_nested") +
+  # scale_y_log10() +
+  facet_wrap(~ species, scales = "free") +
+  # labs(title = "Leaf thickness") +
+  theme_bw()
+
+## LDMC
+ggplot(DURIN.lit |> filter(trait == "LDMC") |>
+         # Something is different with how LEDA calculates LDMC
+         filter(dataset != "LEDA") |>
          drop_na(leaf_age),
        aes(interaction(leaf_age, species), y = value,fill = dataset)) +
   geom_boxplot() +
