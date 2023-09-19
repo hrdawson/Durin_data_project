@@ -45,6 +45,9 @@ durin.dry.check = read.csv("output/2023.09.11_cleanDURIN.csv") %>%
 table(durin.dry.check$siteID)
 table(durin.dry.check$species)
 
+table(durin$siteID)
+table(durin$species)
+
 # Visualize ----
 library(ggh4x)
 
