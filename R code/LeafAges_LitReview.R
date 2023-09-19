@@ -7,7 +7,7 @@ filesLitReview <- dir(path = "raw_data/LitReview", pattern = ".csv", full.names 
 tempLitReview <- map_df(set_names(filesLitReview), function(file) {
   file %>%
     set_names() %>%
-    map_df(~ read.csv(file = file)) #important! read_csv2 reads in European format
+    map_df(~ read.csv(file = file, na.strings=c("","NA"))) #important! read_csv2 reads in European format
 }, .id = "File") |>
   # Make unified tag column
   mutate(tags = paste0(Manual.Tags, ";", Automatic.Tags),
@@ -69,7 +69,7 @@ tagcount = specieslist |>
   group_by(species, tag) |>
   summarize(n = length(Key)) |>
   ungroup() |>
-  mutate_all(na_if,"") |>
+  # dplyr::mutate_all(na_if,"") |>
   drop_na(tag) |>
   # Filter out the phantom tags
   filter(!tag %in% c("extractable data: full dataset", "extractable data: no"))
@@ -178,7 +178,7 @@ litreview.levels.value = c(
   # data extractable
   "no", "dataset", "means",
   # country
-  "Canada", "Eurasia", "Finland", "Japan", "Norway", "Russia", "Sweden",
+  "Canada", "Eurasia", "Finland", "Italy", "Japan", "Norway", "Russia", "Serbia", "Sweden",
   # database
   "general literature", "EcoFlora", "Shidakov2007", "LEDA", "TRY",
   # traits
@@ -189,9 +189,9 @@ litreview.levels.value = c(
   "unspecified", "actual", "February", "winter", "both", "both (alternate)", "no", "Canada", "general literature",
   "leaf area", "database", "March", "spring", "open", "both (concurrent)", "dataset", "Eurasia",
   "EcoFlora", "leaf mass", "April", "early summer", "forested", "current", "means", "Finland",
-  "Shidakov2007", "leaf thickness", "May", "late summer", "previous", "Japan", "LEDA", "LDMC",
-  "June", "autumn", "Norway", "TRY", "LMA", "July", "Russia", "August", "Sweden", "SLA",
-  "September"
+  "Shidakov2007", "leaf thickness", "May", "late summer", "previous", "Italy", "LEDA", "LDMC",
+  "June", "autumn", "Japan", "TRY", "LMA", "July", "Norway", "August", "Russia", "SLA", "Serbia",
+  "September", "Sweden"
 )
 
 litreview.levels.variable = c("measurement type", "leaf year", "sampling month", "sampling season",
