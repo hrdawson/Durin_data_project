@@ -260,7 +260,7 @@ write.csv(leda.sum, "output/2023.09.08_LEDA summary.csv")
 # Make list of articles to include ----
 keeplist.broad = tempLitReview |>
   # Filter to the tag with all the studies of interest
-  filter(tag == "fresh leaves measured") |>
+  filter(tag == "fresh leaves measured" | tag == "leaf morphological traits") |>
   #Unique identifier
   pull(Key)
 
@@ -303,7 +303,9 @@ tagcount.broad = specieslist |>
   # dplyr::mutate_all(na_if,"") |>
   drop_na(tag) |>
   # Filter out the phantom tags
-  filter(!tag %in% c("extractable data: full dataset", "extractable data: no"))
+  filter(!tag %in% c("extractable data: full dataset", "extractable data: no")) |>
+  # Filter out recategorized tags
+  filter(!tag %in% c("trait type: freeze tolerance", "trait type: stable isotope", "trait type: radioactive isotope"))
 
 
 # List all the tags that are relevant to my review
@@ -366,7 +368,7 @@ litreview.levels.value = c(
   # leaf year
   "both (mixed)", "both (concurrent)", "both (alternate)", "current", "previous",
   # country
-  "greenhouse", "Canada", "Estonia", "Finland", "Germany", "Greenland", "Italy", "Japan", "Lithuania",
+  "greenhouse", "Canada", "Estonia", "Eurasia", "Finland", "Germany", "Greenland", "Italy", "Japan", "Lithuania",
    "Mongolia", "Norway", "Poland", "Romania", "Russia", "Scotland", "Serbia", "South Korea", "Sweden", "Turkey", "USA",
   # trait types
   "BVOC", "chemical compound", "freeze tolerance", "microscopic morphology",
@@ -377,12 +379,12 @@ litreview.levels.value = c(
 
 litreview.levels.value = c(
   "unspecified", "January", "winter", "both (mixed)", "greenhouse", "BVOC", "February", "spring", "both (concurrent)",
-  "Canada", "chemical compound", "March", "early summer", "both (alternate)", "Estonia", "freeze tolerance",
-  "April", "summer", "current", "Finland", "microscopic morphology", "May", "late summer", "previous", "Germany", "morphological",
+  "Canada", "chemical compound", "March", "early summer", "both (alternate)", "Estonia", "isotopic",
+  "April", "Eurasia", "summer", "current", "Finland", "microscopic morphology", "May", "late summer", "previous", "Germany", "morphological",
   "June", "autumn", "Greenland", "NDVI", "July", "pH", "growing", "Italy", "photosynthetic (chemical)", "August", "Japan", "photosynthetic (electrical)",
   "September", "Lithuania", "photosynthetic (flux)", "October", "Mongolia", "photosynthetic (radioactive labeling)", "November",
-  "Norway", "Poland", "physiological", "December", "Romania", "Russia", "radioactive isotope", "Scotland", "Serbia",
-  "spectroscopy", "South Korea", "Sweden", "stable isotope", "Turkey", "stoichiometric", "USA"
+  "Norway", "Poland", "physiological", "December", "Romania", "Russia", "Scotland", "Serbia",
+  "spectroscopy", "South Korea", "Sweden", "Turkey", "stoichiometric", "USA"
 )
 
 litreview.levels.variable = c("leaf year", "sampling month", "sampling season",
@@ -401,4 +403,4 @@ ggplot(litreview.percents.broad |>
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
-ggsave("visualizations/2023.09.19_LitReview_metaanalysis_broad.png", width = 8, height = 10, units = "in")
+ggsave("visualizations/2023.09.20_LitReview_metaanalysis_broad.png", width = 10, height = 8, units = "in")
