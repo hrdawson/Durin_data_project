@@ -17,7 +17,7 @@ tempLitReview <- map_df(set_names(filesLitReview), function(file) {
   # Split so that each tag is its own column
   tidyr::separate_wider_delim(tags, delim = ";", names_sep = "X", too_few = "align_start") |>
   # Pivot tags
-  pivot_longer(cols = tagsX1:tagsX42, names_to = "X", values_to = "tag") |>
+  pivot_longer(cols = tagsX1:tagsX47, names_to = "X", values_to = "tag") |>
   select(-X) |>
   drop_na(tag) |>
   # remove leading spaces
@@ -255,3 +255,150 @@ leda.sum = leda |>
   arrange(trait)
 
 write.csv(leda.sum, "output/2023.09.08_LEDA summary.csv")
+
+# Broader species and leaf review ----
+# Make list of articles to include ----
+keeplist.broad = tempLitReview |>
+  # Filter to the tag with all the studies of interest
+  filter(tag == "fresh leaves measured") |>
+  #Unique identifier
+  pull(Key)
+
+specieslist = tempLitReview |>
+  filter(tag == "Empetrum nigrum" | tag == "Vaccinium vitis-idaea") |>
+  # filter(tag == "Empetrum nigrum") |>
+  # Unique identifier
+  dplyr::select(Key, tag) |>
+  rename(species = tag) |>
+  distinct()
+
+list.broad = as.data.frame(keeplist.broad) |>
+  rename(Key = keeplist.broad) |>
+  inner_join(specieslist)
+
+# Summarize counts of each tag ----
+tagcount.broad = specieslist |>
+  right_join(tempLitReview) |>
+  # Filter out irrelevant articles
+  drop_na(species) |>
+  # Filter to studies with leaf traits
+  filter(Key %in% keeplist.broad) |>
+  distinct() |>
+  # Filter out the wrong species ones
+  mutate(drop = case_when(
+    str_detect(tag, "EN ") & species == "Vaccinium vitis-idaea" ~ "cut",
+    str_detect(tag, "VV ") & species == "Empetrum nigrum" ~ "cut",
+    TRUE ~ "keep"
+  )) |>
+  filter(drop == "keep") |>
+  select(-drop) |>
+  # Modify variable names
+  mutate(tag = str_replace(tag, "EN only", ""),
+         tag = str_replace(tag, "VV only", ""),
+         tag = str_trim(tag)) |>
+  # Group and count
+  group_by(species, tag) |>
+  summarize(n = length(Key)) |>
+  ungroup() |>
+  # dplyr::mutate_all(na_if,"") |>
+  drop_na(tag) |>
+  # Filter out the phantom tags
+  filter(!tag %in% c("extractable data: full dataset", "extractable data: no"))
+
+
+# List all the tags that are relevant to my review
+relevant.tags.broad = c("leaf year",
+                  "sampling month", "sampling season",
+                  "trait type:",
+                  "location:")
+#
+# Filter lit review for visualizations
+# This is inelegant but appears to work
+# From https://gist.github.com/simmwill/dc34d71c2da8f644576afa20cca3bbef
+lit.review.broad = map(relevant.tags.broad, str_subset, string = tagcount.broad$tag) %>%
+  reduce(union) |>
+  # Make into data frame
+  as.data.frame() |>
+  rename(tag = "map(relevant.tags.broad, str_subset, string = tagcount.broad$tag) %>% reduce(union)") |>
+  # Bring back in counts
+  left_join(tagcount.broad) |>
+  # Separate out variables
+  separate(tag, into = c("variable", "value"), sep = ":") |>
+  # Remove the white space
+  mutate(variable = str_trim(variable),
+         value = str_trim(value)) |>
+  relocate(species, variable, value, n) |>
+  # Filter out the wrong species ones
+  mutate(drop = case_when(
+  str_starts(variable, "EN") & species == "Vaccinium vitis-idaea" ~ "cut",
+  str_starts(variable, "VV") & species == "Empetrum nigrum" ~ "cut",
+  str_detect(value, "EN only") & species == "Vaccinium vitis-idaea" ~ "cut",
+  str_detect(value, "VV only") & species == "Empetrum nigrum" ~ "cut",
+  TRUE ~ "keep"
+  )) |>
+  filter(drop == "keep") |>
+  select(-drop) |>
+  # Modify variable names
+  mutate(variable = str_replace(variable, "EN ", ""),
+         variable = str_replace(variable, "VV ", ""),
+         value = str_replace(value, "EN only", ""),
+         value = str_replace(value, "VV only", ""),
+         value = str_trim(value),
+         variable = str_trim(variable))
+
+
+## Prep visuals ----
+litreview.percents.broad = lit.review.broad |>
+  filter(variable != "Lit") |>
+  group_by(species, variable) |>
+  summarize(total = sum(n)) |>
+  ungroup() |>
+  left_join(lit.review.broad) |>
+  mutate(percent = round((n/total), 2))
+
+litreview.levels.value = c(
+  ##
+  "unspecified",
+  #sampling month
+  "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",
+  #sampling season
+  "winter", "spring", "early summer", "summer", "late summer", "autumn", "growing",
+  # leaf year
+  "both (mixed)", "both (concurrent)", "both (alternate)", "current", "previous",
+  # country
+  "greenhouse", "Canada", "Estonia", "Finland", "Germany", "Greenland", "Italy", "Japan", "Lithuania",
+   "Mongolia", "Norway", "Poland", "Romania", "Russia", "Scotland", "Serbia", "South Korea", "Sweden", "Turkey", "USA",
+  # trait types
+  "BVOC", "chemical compound", "freeze tolerance", "microscopic morphology",
+  "morphological", "NDVI", "pH", "photosynthetic (chemical)", "photosynthetic (electrical)",
+  "photosynthetic (flux)", "photosynthetic (radioactive labeling)", "physiological", "radioactive isotope",
+  "spectroscopy", "stable isotope", "stoichiometric"
+  )
+
+litreview.levels.value = c(
+  "unspecified", "January", "winter", "both (mixed)", "greenhouse", "BVOC", "February", "spring", "both (concurrent)",
+  "Canada", "chemical compound", "March", "early summer", "both (alternate)", "Estonia", "freeze tolerance",
+  "April", "summer", "current", "Finland", "microscopic morphology", "May", "late summer", "previous", "Germany", "morphological",
+  "June", "autumn", "Greenland", "NDVI", "July", "pH", "growing", "Italy", "photosynthetic (chemical)", "August", "Japan", "photosynthetic (electrical)",
+  "September", "Lithuania", "photosynthetic (flux)", "October", "Mongolia", "photosynthetic (radioactive labeling)", "November",
+  "Norway", "Poland", "physiological", "December", "Romania", "Russia", "radioactive isotope", "Scotland", "Serbia",
+  "spectroscopy", "South Korea", "Sweden", "stable isotope", "Turkey", "stoichiometric", "USA"
+)
+
+litreview.levels.variable = c("leaf year", "sampling month", "sampling season",
+                              "trait type",  "location")
+
+ggplot(litreview.percents.broad |>
+         mutate(value = factor(value, levels = litreview.levels.value),
+                variable = factor(variable, levels = litreview.levels.variable)),
+       aes(x = species, y = percent, fill = value)) +
+  geom_bar(position="fill", stat="identity", color = "black") +
+  geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.7)) +
+  geom_text(aes(label = n), size = 3, position = position_stack(vjust = 0.3)) +
+  facet_grid(~variable) +
+  labs(x = "", y = "Percent of studies") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
+
+ggsave("visualizations/2023.09.19_LitReview_metaanalysis_broad.png", width = 8, height = 10, units = "in")
