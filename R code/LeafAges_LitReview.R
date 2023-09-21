@@ -1,19 +1,24 @@
 # Read in all lit review files
+library(janitor)
 # Make file list
 filesLitReview <- dir(path = "raw_data/LitReview", pattern = ".csv", full.names = TRUE, recursive = TRUE)
 
 # Read in data
 
+temp = read_csv(file = "raw_data/LitReview/2023.09.19 Empetrum leaf.csv",
+                col_select = c(-Issue), name_repair = ~ janitor::make_clean_names(., case = "upper_camel"))
+
 tempLitReview <- map_df(set_names(filesLitReview), function(file) {
   file %>%
     set_names() %>%
-    map_df(~ read.csv(file = file, na.strings=c("","NA"))) #important! read_csv2 reads in European format
+    map_df(~ read_csv(file = file, col_select = c(-Issue),
+                      name_repair = ~ janitor::make_clean_names(., case = "upper_camel"))) #important! read_csv2 reads in European format
 }, .id = "File") |>
   # Make unified tag column
-  mutate(tags = paste0(Manual.Tags, ";", Automatic.Tags),
+  mutate(tags = paste0(ManualTags, ";", AutomaticTags),
          tags = str_replace(tags, "; ", ";")) |>
   # Drop unnecessary columns
-  select(Key, Author, Publication.Year, Publication.Title, Title, tags) |>
+  select(Key, Author, PublicationYear, PublicationTitle, Title, tags) |>
   # Split so that each tag is its own column
   tidyr::separate_wider_delim(tags, delim = ";", names_sep = "X", too_few = "align_start") |>
   # Pivot tags
@@ -258,6 +263,7 @@ write.csv(leda.sum, "output/2023.09.08_LEDA summary.csv")
 
 # Broader species and leaf review ----
 # Make list of articles to include ----
+
 keeplist.broad = tempLitReview |>
   # Filter to the tag with all the studies of interest
   filter(tag == "fresh leaves measured" | tag == "leaf morphological traits") |>
@@ -284,6 +290,15 @@ tagcount.broad = specieslist |>
   # Filter to studies with leaf traits
   filter(Key %in% keeplist.broad) |>
   distinct() |>
+  # Re-key duplicates for accurate counting
+  left_join(duplicates.broad) |>
+  mutate(key.new = case_when(
+    is.na(key.new) ~ Key,
+    TRUE ~ key.new
+  )) |>
+  # Filter duplicate observations now duplicates are rekeyed
+  select(-Key) |>
+  distinct() |>
   # Filter out the wrong species ones
   mutate(drop = case_when(
     str_detect(tag, "EN ") & species == "Vaccinium vitis-idaea" ~ "cut",
@@ -298,7 +313,7 @@ tagcount.broad = specieslist |>
          tag = str_trim(tag)) |>
   # Group and count
   group_by(species, tag) |>
-  summarize(n = length(Key)) |>
+  summarize(n = length(key.new)) |>
   ungroup() |>
   # dplyr::mutate_all(na_if,"") |>
   drop_na(tag) |>
@@ -368,8 +383,9 @@ litreview.levels.value = c(
   # leaf year
   "both (mixed)", "both (concurrent)", "both (alternate)", "current", "previous",
   # country
-  "greenhouse", "Canada", "Estonia", "Eurasia", "Finland", "Germany", "Greenland", "Italy", "Japan", "Lithuania",
-   "Mongolia", "Norway", "Poland", "Romania", "Russia", "Scotland", "Serbia", "South Korea", "Sweden", "Turkey", "USA",
+  "greenhouse", "Bosnia", "Bulgaria", "Canada", "Estonia", "Eurasia", "Finland", "Germany",
+  "Greenland", "Italy", "Japan", "Lithuania","Mongolia", "Norway", "Poland", "Romania",
+  "Russia", "Scotland", "Serbia", "South Korea", "Sweden", "Turkey", "USA",
   # trait types
   "BVOC", "chemical compound", "freeze tolerance", "microscopic morphology",
   "morphological", "NDVI", "pH", "photosynthetic (chemical)", "photosynthetic (electrical)",
@@ -378,7 +394,7 @@ litreview.levels.value = c(
   )
 
 litreview.levels.value = c(
-  "unspecified", "January", "winter", "both (mixed)", "greenhouse", "BVOC", "February", "spring", "both (concurrent)",
+  "unspecified", "January", "winter", "both (mixed)", "Bosnia", "greenhouse", "BVOC", "February", "Bulgaria", "spring", "both (concurrent)",
   "Canada", "chemical compound", "March", "early summer", "both (alternate)", "Estonia", "isotopic",
   "April", "Eurasia", "summer", "current", "Finland", "microscopic morphology", "May", "late summer", "previous", "Germany", "morphological",
   "June", "autumn", "Greenland", "NDVI", "July", "pH", "growing", "Italy", "photosynthetic (chemical)", "August", "Japan", "photosynthetic (electrical)",
