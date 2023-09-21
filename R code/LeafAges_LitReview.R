@@ -173,17 +173,17 @@ litreview.levels.value = c(
   # measurement
   "actual", "database",
   #sampling month
-  "February", "March", "April", "May", "June", "July", "August", "September",
+  "February", "March", "April", "May", "June", "July", "August", "September", "October", "November",
   #sampling season
   "winter", "spring", "early summer", "late summer", "autumn",
   #habitat type
   "both", "open", "forested",
   # leaf year
-  "both (alternate)", "both (concurrent)", "current", "previous",
+  "both (alternate)", "both (concurrent)", "both (mixed)", "current", "previous",
   # data extractable
   "no", "dataset", "means",
   # country
-  "Canada", "Eurasia", "Finland", "Italy", "Japan", "Norway", "Russia", "Serbia", "Sweden",
+  "Canada", "Eurasia", "Finland", "Italy", "Japan", "Norway", "Russia", "Scotland", "Serbia", "Sweden",
   # database
   "general literature", "EcoFlora", "Shidakov2007", "LEDA", "TRY",
   # traits
@@ -193,10 +193,10 @@ litreview.levels.value = c(
 litreview.levels.value = c(
   "unspecified", "actual", "February", "winter", "both", "both (alternate)", "no", "Canada", "general literature",
   "leaf area", "database", "March", "spring", "open", "both (concurrent)", "dataset", "Eurasia",
-  "EcoFlora", "leaf mass", "April", "early summer", "forested", "current", "means", "Finland",
+  "EcoFlora", "leaf mass", "April", "both (mixed)", "early summer", "forested", "current", "means", "Finland",
   "Shidakov2007", "leaf thickness", "May", "late summer", "previous", "Italy", "LEDA", "LDMC",
-  "June", "autumn", "Japan", "TRY", "LMA", "July", "Norway", "August", "Russia", "SLA", "Serbia",
-  "September", "Sweden"
+  "June", "autumn", "Japan", "TRY", "LMA", "July", "Norway", "August", "Russia", "September", "Scotland",
+  "SLA", "October", "Serbia", "November", "Sweden"
 )
 
 litreview.levels.variable = c("measurement type", "leaf year", "sampling month", "sampling season",
@@ -217,7 +217,7 @@ ggplot(litreview.percents |>
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
-ggsave("visualizations/2023.09.08_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
+ggsave("visualizations/2023.09.21_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
 
 # Make table of available database info ----
 TRY.sum = trydata |>
@@ -383,9 +383,10 @@ litreview.levels.value = c(
   # leaf year
   "both (mixed)", "both (concurrent)", "both (alternate)", "current", "previous",
   # country
-  "greenhouse", "Bosnia", "Bulgaria", "Canada", "Estonia", "Eurasia", "Finland", "Germany",
-  "Greenland", "Italy", "Japan", "Lithuania","Mongolia", "Norway", "Poland", "Romania",
-  "Russia", "Scotland", "Serbia", "South Korea", "Sweden", "Turkey", "USA",
+  "greenhouse", "Bosnia", "Bosnia and Herzegovina", "Bulgaria", "Canada", "Estonia", "Eurasia",
+  "Finland", "Germany", "Greenland", "Italy", "Japan", "Lithuania","Mongolia", "Norway",
+  "Poland", "Romania", "Russia", "Scotland", "Serbia", "South Korea", "Sweden", "Turkey", "Ukraine",
+  "USA",
   # trait types
   "BVOC", "chemical compound", "freeze tolerance", "microscopic morphology",
   "morphological", "NDVI", "pH", "photosynthetic (chemical)", "photosynthetic (electrical)",
@@ -394,13 +395,14 @@ litreview.levels.value = c(
   )
 
 litreview.levels.value = c(
-  "unspecified", "January", "winter", "both (mixed)", "Bosnia", "greenhouse", "BVOC", "February", "Bulgaria", "spring", "both (concurrent)",
+  "unspecified", "January", "winter","greenhouse", "both (mixed)", "Bosnia", "Bosnia and Herzegovina",
+  "BVOC", "February", "Bulgaria", "spring", "both (concurrent)",
   "Canada", "chemical compound", "March", "early summer", "both (alternate)", "Estonia", "isotopic",
   "April", "Eurasia", "summer", "current", "Finland", "microscopic morphology", "May", "late summer", "previous", "Germany", "morphological",
   "June", "autumn", "Greenland", "NDVI", "July", "pH", "growing", "Italy", "photosynthetic (chemical)", "August", "Japan", "photosynthetic (electrical)",
   "September", "Lithuania", "photosynthetic (flux)", "October", "Mongolia", "photosynthetic (radioactive labeling)", "November",
   "Norway", "Poland", "physiological", "December", "Romania", "Russia", "Scotland", "Serbia",
-  "spectroscopy", "South Korea", "Sweden", "Turkey", "stoichiometric", "USA"
+  "spectroscopy", "South Korea", "Sweden", "Turkey", "stoichiometric","Ukraine", "USA"
 )
 
 litreview.levels.variable = c("leaf year", "sampling month", "sampling season",
@@ -419,4 +421,4 @@ ggplot(litreview.percents.broad |>
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
-ggsave("visualizations/2023.09.20_LitReview_metaanalysis_broad.png", width = 10, height = 8, units = "in")
+ggsave("visualizations/2023.09.21_LitReview_metaanalysis_broad.png", width = 10, height = 8, units = "in")
