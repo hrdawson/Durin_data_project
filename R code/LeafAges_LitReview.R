@@ -86,7 +86,7 @@ relevant.tags = c("extractable data", "leaf year",
                   # "Lit:",
                   "measurement type",
                   "trait:", "database source:", "database:",
-                  "location:", "study")
+                  "location:", "study", "justification", "graph")
 #
 # Filter lit review for visualizations
 # This is inelegant but appears to work
@@ -188,18 +188,22 @@ litreview.levels.value = c(
   "general literature", "EcoFlora", "Shidakov2007", "LEDA", "TRY",
   # traits
   "leaf area", "leaf mass", "leaf thickness", "LDMC", "LMA", "SLA",
+  # justifications
+  "none", "appearance", "testing physiology by age",
+  # graphs
+  "years lumped", "years split",
   "unspecified")
 
 litreview.levels.value = c(
   "unspecified", "actual", "February", "winter", "both", "both (alternate)", "no", "Canada", "general literature",
-  "leaf area", "database", "March", "spring", "open", "both (concurrent)", "dataset", "Eurasia",
-  "EcoFlora", "leaf mass", "April", "both (mixed)", "early summer", "forested", "current", "means", "Finland",
-  "Shidakov2007", "leaf thickness", "May", "late summer", "previous", "Italy", "LEDA", "LDMC",
+  "leaf area", "none", "years lumped", "database", "March", "spring", "open", "both (concurrent)", "dataset", "Eurasia",
+  "EcoFlora", "leaf mass", "appearance", "years split", "April", "both (mixed)", "early summer", "forested", "current", "means", "Finland",
+  "Shidakov2007", "leaf thickness", "testing physiology by age", "May", "late summer", "previous", "Italy", "LEDA", "LDMC",
   "June", "autumn", "Japan", "TRY", "LMA", "July", "Norway", "August", "Russia", "September", "Scotland",
   "SLA", "October", "Serbia", "November", "Sweden"
 )
 
-litreview.levels.variable = c("measurement type", "leaf year", "sampling month", "sampling season",
+litreview.levels.variable = c("measurement type", "leaf year", "justification", "graph", "sampling month", "sampling season",
                               "trait", "habitat type", "location", "database")
 
 # All variable by species in stacked barchart
@@ -327,7 +331,7 @@ tagcount.broad = specieslist |>
 relevant.tags.broad = c("leaf year",
                   "sampling month", "sampling season",
                   "trait type:",
-                  "location:")
+                  "location:", "justification:", "graph:")
 #
 # Filter lit review for visualizations
 # This is inelegant but appears to work
@@ -382,6 +386,11 @@ litreview.levels.value = c(
   "winter", "spring", "early summer", "summer", "late summer", "autumn", "growing",
   # leaf year
   "both (mixed)", "both (concurrent)", "both (alternate)", "current", "previous",
+  # justifications
+  "none", "appearance", "data quality", "only current leaves available",
+  "prior research", "standardization", "testing physiology by age",
+  # graphs
+  "years lumped", "years split",
   # country
   "greenhouse", "Bosnia", "Bosnia and Herzegovina", "Bulgaria", "Canada", "Estonia", "Eurasia",
   "Finland", "Germany", "Greenland", "Italy", "Japan", "Lithuania","Mongolia", "Norway",
@@ -395,17 +404,17 @@ litreview.levels.value = c(
   )
 
 litreview.levels.value = c(
-  "unspecified", "January", "winter","greenhouse", "both (mixed)", "Bosnia", "Bosnia and Herzegovina",
-  "BVOC", "February", "Bulgaria", "spring", "both (concurrent)",
-  "Canada", "chemical compound", "March", "early summer", "both (alternate)", "Estonia", "isotopic",
-  "April", "Eurasia", "summer", "current", "Finland", "microscopic morphology", "May", "late summer", "previous", "Germany", "morphological",
-  "June", "autumn", "Greenland", "NDVI", "July", "pH", "growing", "Italy", "photosynthetic (chemical)", "August", "Japan", "photosynthetic (electrical)",
+  "unspecified", "none", "years lumped", "January", "winter","greenhouse", "both (mixed)", "Bosnia", "Bosnia and Herzegovina",
+  "BVOC", "appearance", "years split", "February", "Bulgaria", "spring", "both (concurrent)",
+  "Canada", "chemical compound", "data quality", "March", "early summer", "both (alternate)", "Estonia", "isotopic", "only current leaves available",
+  "April", "Eurasia", "summer", "current", "Finland", "microscopic morphology", "prior research", "May", "late summer", "previous", "Germany", "morphological", "standardization",
+  "June", "autumn", "Greenland", "NDVI", "testing physiology by age", "July", "pH", "growing", "Italy", "photosynthetic (chemical)", "August", "Japan", "photosynthetic (electrical)",
   "September", "Lithuania", "photosynthetic (flux)", "October", "Mongolia", "photosynthetic (radioactive labeling)", "November",
   "Norway", "Poland", "physiological", "December", "Romania", "Russia", "Scotland", "Serbia",
   "spectroscopy", "South Korea", "Sweden", "Turkey", "stoichiometric","Ukraine", "USA"
 )
 
-litreview.levels.variable = c("leaf year", "sampling month", "sampling season",
+litreview.levels.variable = c("leaf year", "justification", "graph", "sampling month", "sampling season",
                               "trait type",  "location")
 
 ggplot(litreview.percents.broad |>
