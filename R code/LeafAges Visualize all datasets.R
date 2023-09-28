@@ -1,20 +1,26 @@
 # Bring together the outside datasets with the DURIN dataset
 
-DURIN.lit = read.csv("output/2023.09.11_cleanDURIN.csv") %>%
+# Make big tibble ----
+DURIN.lit = durin |>
+  # read.csv("output/2023.09.11_cleanDURIN.csv") %>%
   select(-dry_mass_g) |>
   # Add in prelim dry mass data
   left_join(read.csv("raw_data/2023.09.11_DURIN_drymass.csv")) |>
   # Filter to relevant data
   filter(species %in% c("Vaccinium vitis-idaea", "Empetrum nigrum")) |>
+  # Filter out erroneous leaf scans
+  filter(!envelope_ID %in% c("ATG1962", "AVY7377", "AVI9865", "AXY0067")) |>
   # filter(siteID == "Lygra") |>
   # filter(project == "Field - Traits") |>
   # filter(DroughtTrt %in% c(NA, "Amb (0)")) |>
   # Add DURIN field
   mutate(dataset = "DURIN",
          # Calculate SLA with dry weights
+         SLA.wet = leaf_area/wet_mass_g,
+         # Calculate SLA with dry weights
          SLA.dry = leaf_area/dry_mass_g,
          # Calculate LDMC
-         LDMC = dry_mass_g/wet_mass_g) |>
+         LDMC = (dry_mass_g*1000)/wet_mass_g) |>
   # Select columns for quick comparison
   relocate(c(leaf_area, bulk_nr_leaves_clean, SLA.wet, SLA.dry, dry_mass_g, LDMC), .after = plant_height) |>
   select(envelope_ID, species, dataset, leaf_age:leaf_thickness_3_mm) |>
@@ -32,8 +38,33 @@ DURIN.lit = read.csv("output/2023.09.11_cleanDURIN.csv") %>%
   mutate(trait = replace(trait,
                          trait == "leaf_thickness_1_mm" | trait == "leaf_thickness_2_mm" | trait == "leaf_thickness_3_mm",
                          "leaf_thickness")) |>
+  filter(!trait %in% c("bulk_nr_leaves_clean", "plant_height")) |>
   # Add in external datasets
-  bind_rows(tundratraits.join, leda.join, trydata)
+  bind_rows(tundratraits.join, leda.join, trydata) |>
+  bind_rows(LitReview.datasets |> select(dataset, leaf_age, trait, value.converted, species) |>
+              rename(value = value.converted)) |>
+  # Standardize leaf_ages to reduce chaos
+  mutate(leaf_age = case_when(
+    leaf_age == "database" ~ "unspecified",
+    leaf_age == "both" ~ "unspecified",
+    TRUE ~ leaf_age
+  ),
+  leaf_age = factor(leaf_age, levels = c("young", "old", "unspecified"),
+                    labels = c("current", "previous", "unspecified")),
+  dataset = factor(dataset, levels = c("DURIN", "Literature", "LEDA", "TRY", "TTT"),
+                   labels = c("DURIN", "Literature", "Database", "Database", "Database")),
+  trait = factor(trait, levels = c("leaf_area", "SLA", "LDMC", "dry_mass_g", "leaf_thickness",
+                                   "wet_mass_g", "SLA.wet"),
+                 labels = c("Leaf area (cm^2)", "SLA (cm^2/g)", "LDMC (mg/g)", "Dry mass (g)",
+                            "Leaf thickness (mm)", "Wet mass (g)", "SLA (cm^2/g)"))) |>
+  # Remove plant height measurements
+  filter(trait != "plant_height") |>
+  # Drop traits that can't be calculated yet
+  drop_na(value)
+
+## Find NA leaf_age
+error.leafage = DURIN.lit |>
+  filter(is.na(leaf_age))
 
 ## Check which leaves have dry mass so far
 durin.dry.check = read.csv("output/2023.09.11_cleanDURIN.csv") %>%
@@ -50,24 +81,32 @@ table(durin$species)
 
 # Visualize ----
 library(ggh4x)
+library(viridis)
+library(patchwork)
 
 ## Leaf area
 ggplot(DURIN.lit |> filter(trait == "leaf_area") |>
-         drop_na(leaf_age) |> filter(value < 10),
-       aes(interaction(leaf_age, species), y = value,fill = dataset)) +
-  geom_boxplot() +
+         drop_na(leaf_age) |> filter(value < 20),
+       aes(interaction(leaf_age, species), y = value,fill = dataset, color = dataset)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.5) +
+  geom_point(position = position_jitterdodge()) +
   scale_x_discrete(guide = "axis_nested") +
+  scale_fill_viridis(discrete=T) +
+  scale_color_viridis(discrete=T) +
   scale_y_log10() +
   facet_wrap(~ species, scales = "free") +
   # labs(title = "Leaf thickness") +
   theme_bw()
 
 # Specific leaf area
-## CAUTION: SLA for DURIN is calculated with wet mass
+## CAUTION: SLA for DURIN is sometimes calculated with wet mass
 ggplot(DURIN.lit |> filter(trait == "SLA") |>
-         drop_na(leaf_age) |> filter(value < 500),
-       aes(interaction(leaf_age, species), y = value,fill = dataset)) +
-  geom_boxplot() +
+         drop_na(leaf_age) |> filter(value < 250),
+       aes(interaction(leaf_age, species), y = value,fill = dataset, color = dataset)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.5) +
+  geom_point(position = position_jitterdodge()) +
+  scale_fill_viridis(discrete=T) +
+  scale_color_viridis(discrete=T) +
   scale_x_discrete(guide = "axis_nested") +
   # labs(title = "Leaf thickness") +
   theme_bw()
@@ -75,8 +114,9 @@ ggplot(DURIN.lit |> filter(trait == "SLA") |>
 ## Leaf thickness
 ggplot(DURIN.lit |> filter(trait == "leaf_thickness") |>
          drop_na(leaf_age) |> filter(value < 1000),
-       aes(interaction(leaf_age, species), y = value,fill = dataset)) +
-  geom_boxplot() +
+       aes(interaction(leaf_age, species), y = value,fill = dataset, color = dataset)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.5) +
+  geom_point(position = position_jitterdodge()) +
   scale_x_discrete(guide = "axis_nested") +
   # scale_y_log10() +
   # facet_wrap(~ species, scales = "free") +
@@ -96,13 +136,33 @@ ggplot(DURIN.lit |> filter(trait == "dry_mass_g") |>
 
 ## LDMC
 ggplot(DURIN.lit |> filter(trait == "LDMC") |>
-         # Something is different with how LEDA calculates LDMC
-         filter(dataset != "LEDA") |>
+         filter(value > 100 & value < 700) |>
          drop_na(leaf_age),
-       aes(interaction(leaf_age, species), y = value,fill = dataset)) +
-  geom_boxplot() +
+       aes(interaction(leaf_age, species), y = value,fill = dataset, color = dataset)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.5) +
+  geom_point(position = position_jitterdodge()) +
   scale_x_discrete(guide = "axis_nested") +
   # scale_y_log10() +
   facet_wrap(~ species, scales = "free") +
   # labs(title = "Leaf thickness") +
   theme_bw()
+
+## Three traits together ----
+ggplot(DURIN.lit |> filter(trait %in% c("Leaf area (cm^2)", "SLA (cm^2/g)", "LDMC (mg/g)")) |>
+         drop_na(leaf_age),
+       aes(x = leaf_age, y = value,fill = dataset, color = dataset)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.5) +
+  geom_point(position = position_jitterdodge(), alpha = 0.5) +
+  scale_x_discrete(guide = "axis_nested") +
+  scale_fill_viridis(discrete=T) +
+  scale_color_viridis(discrete=T) +
+  # scale_y_log10() +
+  facet_nested(~ species + trait, scales = "free", independent = "y",
+               nest_line = element_line(linetype = 2)) +
+  labs(x = "Leaf year") +
+  theme_bw() +
+  theme(strip.background = element_blank(),
+        ggh4x.facet.nestline = element_line(colour = "black"),
+        axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5))
+
+ggsave("visualizations/2023.09.27_TraitsTogether.png", width = 10, height = 8, units = "in")

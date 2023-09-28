@@ -18,7 +18,7 @@ leda.leafmass = read.csv("raw_data/LEDA/LEDA_LeafMass.csv") |>
   rename(species = SBS.name, spp.nr = SBS.number, value = single.value..mg.) |>
   select(-c(mean.LM..mg.,maximum.LM..mg., minimum.LM..mg.,
             number.of.replicates, standard.deviation, standard.error)) |>
-  mutate(trait = "dry_mass",
+  mutate(trait = "dry_mass_g",
          # Convert to g
          value = value/1000,
          unit = "g")
@@ -74,4 +74,10 @@ leda.join = leda |>
   select(species, trait, value) |>
   # Add database info
   mutate(leaf_age = "database",
-         dataset = "LEDA")
+         dataset = "LEDA") |>
+  # Flag datapoints for removal
+  mutate(flag = case_when(
+    trait == "leaf_area" & value <= 0 ~ "below minimum",
+    TRUE ~ "okay"
+  )) |>
+  filter(flag == "okay")

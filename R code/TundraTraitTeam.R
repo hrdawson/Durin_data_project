@@ -29,20 +29,24 @@ tundratraits.join = tundratraits |>
     Trait == "Leaf fresh mass" ~ "wet_mass_g",
     TRUE ~ "Unknown"
   )) |>
+  # Filter out irrelevant traits
+  filter(!trait %in% c("plant_height", "Unknown")) |>
   # Convert units
   mutate(Value = case_when(
     trait == "plant_height" ~ Value * 100,
     trait == "leaf_area" ~ Value / 100,
     trait == "SLA" ~ Value * 10,
     TRUE ~ Value
-  )) |>
+  ),
+  # Force envelope_ID type
+  IndividualID = as.character(IndividualID)) |>
   # Specify dataset
   mutate(dataset = "TTT",
          leaf_age = "database") |>
   # Select relevant columns
-  select(IndividualID, AccSpeciesName, trait, Value, dataset, leaf_age) |>
+  select(IndividualID, AccSpeciesName, trait, Value, dataset, leaf_age, DataContributor) |>
   # Standardize column names
-  rename(Envelope_ID = IndividualID, value = Value, species = AccSpeciesName)
+  rename(envelope_ID = IndividualID, value = Value, species = AccSpeciesName)
 
 
 # Look at variance ----
@@ -79,7 +83,7 @@ TTT.EN = tundratraits |>
   # Select relevant columns
   select(IndividualID, AccSpeciesName, trait, Value, dataset, leaf_age) |>
   # Standardize column names
-  rename(Envelope_ID = IndividualID, value = Value, species = AccSpeciesName)
+  rename(envelope_ID = IndividualID, value = Value, species = AccSpeciesName)
 
 ### DURIN dataset ----
 durin.subset.EN = read.csv("output/2023.08.16_cleanDURIN.csv") %>%

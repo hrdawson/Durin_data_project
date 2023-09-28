@@ -15,7 +15,10 @@ trydata = read.csv("raw_data/TRY/28661.csv") |>
     TraitID == 47 ~ "LDMC",
     TraitID == 55 ~ "dry_mass_g",
     TRUE ~ "Unknown"
-  )) |>
+  ),
+  # Force envelope_ID to character
+  ObservationID = as.character(ObservationID)
+  ) |>
   # Standardize species names
   mutate(species = case_when(
     AccSpeciesID == 20484 ~ "Empetrum nigrum",
@@ -27,6 +30,7 @@ trydata = read.csv("raw_data/TRY/28661.csv") |>
     trait == "SLA" ~ StdValue * 10,
     trait == "leaf_area" ~ StdValue / 100,
     trait == "dry_mass_g" ~ StdValue / 1000,
+    trait == "LDMC" ~ StdValue * 1000,
     TRUE ~ StdValue
   )) |>
   # Remove plant height (for now)
@@ -43,7 +47,13 @@ trydata = read.csv("raw_data/TRY/28661.csv") |>
   # Select relevant columns
   select(ObservationID, species, trait, StdValue, dataset, leaf_age) |>
   # Standardize column names
-  rename(Envelope_ID = ObservationID, value = StdValue)
+  rename(envelope_ID = ObservationID, value = StdValue) |>
+  # Flag datapoints for removal
+  mutate(flag = case_when(
+    trait == "leaf_area" & value > 0.2 ~ "above maximum",
+    TRUE ~ "okay"
+  )) |>
+  filter(flag == "okay")
 
 table(trydata$trait)
 table(trydata$Dataset)
