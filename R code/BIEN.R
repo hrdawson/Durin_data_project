@@ -26,7 +26,7 @@ BIEN.join = BIEN.EN |>
   # Filter out variables not of interest
   drop_na(trait) |>
   # Drop duplicates from other database source
-  filter(url_source != "http://www.leda-traitbase.org/LEDAportal/") |>
+  # filter(url_source != "http://www.leda-traitbase.org/LEDAportal/") |>
   # Convert units
   mutate(trait_value = as.numeric(trait_value),
     value = case_when(
@@ -34,7 +34,12 @@ BIEN.join = BIEN.EN |>
     trait == "SLA" ~ trait_value * 10,
     trait == "leaf_area" ~ trait_value / 100,
     TRUE ~ trait_value
-  ))
+  )) |>
+  # Select only the relevant variables
+  rename(species = scrubbed_species_binomial)
+  select(species, trait, value) |>
+  # Add in relevant metadata
+    mutate(leaf_age = )
 
 BIEN.sources = as.data.frame(table(BIEN$url_source))
 BIEN.traits = as.data.frame(table(BIEN$trait_name))
