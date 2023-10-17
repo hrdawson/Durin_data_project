@@ -129,10 +129,10 @@ ggsave("visualizations/2023.10.17_AgePaired.png", width = 14, height = 10, units
 # Sogndal only
 ggplot(durin.random.corr |> filter(siteID == "Sogndal"),
        aes(x = interaction(leaf_age, habitat), y = value)) +
-  geom_boxplot(alpha = 0.5, fill = "grey70") +
   geom_line(aes(group=pairedID, color = corr), alpha = 0.3) +
   scale_color_manual(values = c("blue", "red", "grey")) +
   geom_point(aes(fill=leaf_age, group=pairedID)) +
+  geom_boxplot(alpha = 0.5, fill = "grey90") +
   scale_x_discrete(guide = "axis_nested") +
   facet_nested(species ~ trait, scales = "free", independent = "y",
                nest_line = element_line(linetype = 2)) +
