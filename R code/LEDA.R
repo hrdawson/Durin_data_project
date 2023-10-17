@@ -71,7 +71,8 @@ leda.join = leda |>
     genus == "Empetrum" ~ "Empetrum nigrum",
     TRUE ~ species)) |>
   # Select relevant data
-  select(species, trait, value) |>
+  rename(source = reference) |>
+  select(species, trait, value, source) |>
   # Add database info
   mutate(leaf_age = "database",
          dataset = "LEDA") |>
