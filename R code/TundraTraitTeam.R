@@ -1,7 +1,7 @@
 # Examine this new dataset ----
 tundratraits = read.csv("raw_data/TundraTraitTeam/TTT_cleaned_dataset_v1.csv") |>
   # Filter based on error risk < 4
-filter(ErrorRisk < 4)
+filter(ErrorRisk < 4 | is.na(ErrorRisk))
 
 TTT.EN = tundratraits |>
   filter(AccSpeciesName == "Empetrum nigrum")
@@ -12,6 +12,8 @@ TTT.VV = tundratraits |>
   filter(AccSpeciesName == "Vaccinium vitis-idaea")
 
 table(TTT.VV$Trait)
+
+
 
 # Make dataframe that matches other datasets ----
 tundratraits.join = tundratraits |>
@@ -129,15 +131,4 @@ ttt.authors = tundratraits |>
 
 # write.csv(ttt.authors, "output/TTT_authors.csv")
 
-# Tundra Traits d13C -----
-TTT.d13C = tundratraits |>
-  # Filter to relevant species
-  filter(AccSpeciesName == "Empetrum nigrum" | AccSpeciesName == "Vaccinium vitis-idaea") |>
-  # Filter to relevant trait
-  filter(Trait == "Leaf carbon (C) isotope discrimination (delta 13C)") |>
-  # Assign leaf age and metadata
-  mutate(dataset = "TTT",
-         leaf_age = case_when(
-           Comments == "new leaves" ~ "current",
-           Comments == "old leaves" ~ "previous"
-         ))
+
