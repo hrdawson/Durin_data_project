@@ -63,69 +63,6 @@ library(ggh4x)
 library(viridis)
 library(patchwork)
 
-## Leaf area
-ggplot(DURIN.lit |> filter(trait == "leaf_area") |>
-         drop_na(leaf_age) |> filter(value < 20),
-       aes(interaction(leaf_age, species), y = value,fill = dataset, color = dataset)) +
-  geom_boxplot(outlier.shape = NA, alpha = 0.5) +
-  geom_point(position = position_jitterdodge()) +
-  scale_x_discrete(guide = "axis_nested") +
-  scale_fill_viridis(discrete=T) +
-  scale_color_viridis(discrete=T) +
-  scale_y_log10() +
-  facet_wrap(~ species, scales = "free") +
-  # labs(title = "Leaf thickness") +
-  theme_bw()
-
-# Specific leaf area
-## CAUTION: SLA for DURIN is sometimes calculated with wet mass
-ggplot(DURIN.lit |> filter(trait == "SLA") |>
-         drop_na(leaf_age) |> filter(value < 250),
-       aes(interaction(leaf_age, species), y = value,fill = dataset, color = dataset)) +
-  geom_boxplot(outlier.shape = NA, alpha = 0.5) +
-  geom_point(position = position_jitterdodge()) +
-  scale_fill_viridis(discrete=T) +
-  scale_color_viridis(discrete=T) +
-  scale_x_discrete(guide = "axis_nested") +
-  # labs(title = "Leaf thickness") +
-  theme_bw()
-
-## Leaf thickness
-ggplot(DURIN.lit |> filter(trait == "leaf_thickness") |>
-         drop_na(leaf_age) |> filter(value < 1000),
-       aes(interaction(leaf_age, species), y = value,fill = dataset, color = dataset)) +
-  geom_boxplot(outlier.shape = NA, alpha = 0.5) +
-  geom_point(position = position_jitterdodge()) +
-  scale_x_discrete(guide = "axis_nested") +
-  # scale_y_log10() +
-  # facet_wrap(~ species, scales = "free") +
-  # labs(title = "Leaf thickness") +
-  theme_bw()
-
-## Dry mass
-ggplot(DURIN.lit |> filter(trait == "dry_mass_g") |>
-         drop_na(leaf_age),
-       aes(interaction(leaf_age, species), y = value,fill = dataset)) +
-  geom_boxplot() +
-  scale_x_discrete(guide = "axis_nested") +
-  # scale_y_log10() +
-  facet_wrap(~ species, scales = "free") +
-  # labs(title = "Leaf thickness") +
-  theme_bw()
-
-## LDMC
-ggplot(DURIN.lit |> filter(trait == "LDMC") |>
-         filter(value > 100 & value < 700) |>
-         drop_na(leaf_age),
-       aes(interaction(leaf_age, species), y = value,fill = dataset, color = dataset)) +
-  geom_boxplot(outlier.shape = NA, alpha = 0.5) +
-  geom_point(position = position_jitterdodge()) +
-  scale_x_discrete(guide = "axis_nested") +
-  # scale_y_log10() +
-  facet_wrap(~ species, scales = "free") +
-  # labs(title = "Leaf thickness") +
-  theme_bw()
-
 ## Three traits together ----
 ggplot(DURIN.lit |>
          filter(trait %in% c("Leaf area (cm^2)", "SLA (cm^2/g)", "LDMC (mg/g)")) |>
