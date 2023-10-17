@@ -7,10 +7,11 @@ DURIN.lit = durin |>
   filter(siteID == "Sogndal") |>
   filter(project == "Field - Traits") |>
   # Add DURIN field
-  mutate(dataset = "DURIN") |>
+  mutate(dataset = "DURIN",
+         source = "DURIN") |>
   # Select columns for quick comparison
   relocate(c(leaf_area, SLA, dry_mass_g, wet_mass_g, LDMC, leaf_thickness_1_mm:leaf_thickness_3_mm), .after = leaf_age) |>
-  select(envelope_ID, species, dataset, leaf_age:leaf_thickness_3_mm) |>
+  select(envelope_ID, species, dataset, source, leaf_age:leaf_thickness_3_mm) |>
   # Tidy in long form
   pivot_longer(cols = leaf_area:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
   # Standardize traits
@@ -19,7 +20,7 @@ DURIN.lit = durin |>
                          "leaf_thickness")) |>
   # Add in external datasets
   bind_rows(tundratraits.join, leda.join, trydata) |>
-  bind_rows(LitReview.datasets |> select(dataset, leaf_age, trait, value.converted, species) |>
+  bind_rows(LitReview.datasets |> select(dataset, leaf_age, trait, value.converted, species, source) |>
               rename(value = value.converted)) |>
   filter(!trait %in% c("bulk_nr_leaves_clean", "plant_height")) |>
   # Filter out erroneous values
@@ -37,8 +38,8 @@ DURIN.lit = durin |>
   ),
   leaf_age = factor(leaf_age, levels = c("young", "old", "unspecified"),
                     labels = c("current", "previous", "unspecified")),
-  dataset = factor(dataset, levels = c("DURIN", "Literature", "LEDA", "TRY", "TTT"),
-                   labels = c("DURIN", "Literature", "Database", "Database", "Database")),
+  # dataset = factor(dataset, levels = c("DURIN", "Literature", "LEDA", "TRY", "TTT"),
+                   # labels = c("DURIN", "Literature", "Database", "Database", "Database")),
   trait = factor(trait, levels = c("leaf_area", "SLA", "LDMC", "dry_mass_g", "leaf_thickness",
                                    "wet_mass_g"),
                  labels = c("Leaf area (cm^2)", "SLA (cm^2/g)", "LDMC (mg/g)", "Dry mass (g)",
@@ -52,18 +53,10 @@ DURIN.lit = durin |>
 error.leafage = DURIN.lit |>
   filter(is.na(leaf_age))
 
-## Check which leaves have dry mass so far
-durin.dry.check = read.csv("output/2023.09.11_cleanDURIN.csv") %>%
-  select(-dry_mass_g) |>
-  # Add in prelim dry mass data
-  left_join(read.csv("raw_data/2023.09.11_DURIN_drymass.csv")) |>
-  drop_na(dry_mass_g)
+# Check for duplicate datasources ----
+DURIN.lit.sources = DURIN.lit |>
+  summarize(n = length(value), .by = c(dataset, source))
 
-table(durin.dry.check$siteID)
-table(durin.dry.check$species)
-
-table(durin$siteID)
-table(durin$species)
 
 # Visualize ----
 library(ggh4x)
