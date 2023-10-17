@@ -1,3 +1,45 @@
+# Make table of available database info ----
+TRY.sum = trydata |>
+  group_by(species, trait) |>
+  summarize(n = length(trait)) |>
+  pivot_wider(names_from = species, values_from = n) |>
+  arrange(trait)
+
+TRY.sum.spp = TRY.sum |>
+  group_by(`Empetrum nigrum`, `Vaccinium vitis-idaea`) |>
+  summarize(n = sum())
+
+write.csv(TRY.sum, "output/2023.09.08_TRY summary.csv")
+
+TTT.sum = tundratraits |>
+  filter(AccSpeciesName == "Empetrum nigrum" | AccSpeciesName == "Vaccinium vitis-idaea") |>
+  group_by(AccSpeciesName, Trait) |>
+  summarize(n = length(Trait)) |>
+  pivot_wider(names_from = AccSpeciesName, values_from = n) |>
+  mutate(trait = case_when(
+    Trait == "Leaf area" ~ "leaf_area",
+    Trait == "Leaf area per leaf dry mass (specific leaf area, SLA)" ~ "SLA",
+    Trait == "Leaf dry mass per leaf fresh mass (Leaf dry matter content, LDMC)" ~ "LDMC",
+    Trait == "Leaf dry mass" ~ "dry_mass_g",
+    TRUE ~ "Unknown"
+  )) |>
+  filter(trait != "Unknown") |>
+  select(trait, "Empetrum nigrum", "Vaccinium vitis-idaea") |>
+  arrange(trait)
+
+write.csv(TTT.sum, "output/2023.09.08_TTT summary.csv")
+
+leda.sum = leda |>
+  filter(species == "Vaccinium vitis-idaea" | genus == "Empetrum")  |>
+  filter(general.method %in% c("actual measurement", "actual measurement (following LEDA data standards)")) |>
+  filter(trait != "plant_height") |>
+  group_by(genus, trait) |>
+  summarize(n = length(trait)) |>
+  pivot_wider(names_from = genus, values_from = n) |>
+  arrange(trait)
+
+write.csv(leda.sum, "output/2023.09.08_LEDA summary.csv")
+
 # Bring together the outside datasets with the DURIN dataset
 
 # Make big tibble ----
@@ -38,8 +80,8 @@ DURIN.lit = durin |>
   ),
   leaf_age = factor(leaf_age, levels = c("young", "old", "unspecified"),
                     labels = c("current", "previous", "unspecified")),
-  # dataset = factor(dataset, levels = c("DURIN", "Literature", "LEDA", "TRY", "TTT"),
-                   # labels = c("DURIN", "Literature", "Database", "Database", "Database")),
+  dataset = factor(dataset, levels = c("DURIN", "Literature", "LEDA", "TRY", "TTT"),
+                   labels = c("DURIN", "Literature", "Database", "Database", "Database")),
   trait = factor(trait, levels = c("leaf_area", "SLA", "LDMC", "dry_mass_g", "leaf_thickness",
                                    "wet_mass_g"),
                  labels = c("Leaf area (cm^2)", "SLA (cm^2/g)", "LDMC (mg/g)", "Dry mass (g)",
