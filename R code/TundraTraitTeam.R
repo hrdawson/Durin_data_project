@@ -48,7 +48,6 @@ tundratraits.join = tundratraits |>
   # Standardize column names
   rename(envelope_ID = IndividualID, value = Value, species = AccSpeciesName)
 
-
 # Look at variance ----
 ## Empetrum ----
 ### TundraTrait dataset ----
@@ -129,3 +128,16 @@ ttt.authors = tundratraits |>
   distinct()
 
 # write.csv(ttt.authors, "output/TTT_authors.csv")
+
+# Tundra Traits d13C -----
+TTT.d13C = tundratraits |>
+  # Filter to relevant species
+  filter(AccSpeciesName == "Empetrum nigrum" | AccSpeciesName == "Vaccinium vitis-idaea") |>
+  # Filter to relevant trait
+  filter(Trait == "Leaf carbon (C) isotope discrimination (delta 13C)") |>
+  # Assign leaf age and metadata
+  mutate(dataset = "TTT",
+         leaf_age = case_when(
+           Comments == "new leaves" ~ "current",
+           Comments == "old leaves" ~ "previous"
+         ))
