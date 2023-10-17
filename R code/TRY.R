@@ -1,11 +1,8 @@
 library(rtry)
 
 # Read in TRY data ----
-trydata = read.csv("raw_data/TRY/28661.csv") |>
-  mutate(OrigUncertaintyStr = as.character(OrigUncertaintyStr)) |>
-  bind_rows(read.csv("raw_data/TRY/28371.csv")) |>
-  bind_rows(read.csv("raw_data/TRY/28390.csv")) |>
-  filter(TraitID %in% c(1, 3110, 3112, 3114, 11, 3116, 3117, 3106, 46, 47, 55)) |>
+trydata = read.csv("raw_data/TRY/29435.csv") |>
+  filter(TraitID %in% c(1, 3110, 3112, 3114, 11, 3116, 3117, 3106, 46, 47, 55, 89)) |>
   # Assign same trait names as DURIN
   mutate(trait = case_when(
     TraitID %in% c(1, 3110, 3112, 3114) ~ "leaf_area",
@@ -14,6 +11,7 @@ trydata = read.csv("raw_data/TRY/28661.csv") |>
     TraitID == 46 ~ "leaf_thickness",
     TraitID == 47 ~ "LDMC",
     TraitID == 55 ~ "dry_mass_g",
+    TraitID == 89 ~ "d13C",
     TRUE ~ "Unknown"
   ),
   # Force envelope_ID to character
@@ -39,7 +37,7 @@ trydata = read.csv("raw_data/TRY/28661.csv") |>
   mutate(dataset = "TRY",
          leaf_age = "database") |>
   # Filter based on error risk < 4
-  filter(ErrorRisk < 4) |>
+  filter(ErrorRisk < 4 | is.na(ErrorRisk)) |>
   # Remove duplicates
   rtry_remove_dup() |>
   # Remove datasets we're extracting directly
