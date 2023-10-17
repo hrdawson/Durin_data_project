@@ -334,8 +334,9 @@ durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sognda
          dry_mass_g = dry_mass_g_original/bulk_nr_leaves,
          leaf_area = leaf_area_original/bulk_nr_leaves,
          # SLA is calculated from aggregate, not scaled
-         SLA = leaf_area_original/dry_mass_g_original
-  ) |>
+         SLA = leaf_area_original/dry_mass_g_original,
+         # LDMC is calculated from aggregate, not scaled
+         LDMC = (dry_mass_g*1000)/wet_mass_g)) |>
   # Filter out any complete duplicates
   distinct()
 
