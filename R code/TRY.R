@@ -41,11 +41,11 @@ trydata = read.csv("raw_data/TRY/29435.csv") |>
   # Remove duplicates
   rtry_remove_dup() |>
   # Remove datasets we're extracting directly
-  filter(!Dataset %in% c("The LEDA Traitbase", "Tundra Trait Team")) |>
+  filter(!Dataset %in% c("The LEDA Traitbase", "Tundra Trait Team", "Tundra Plant Traits Database")) |>
   # Select relevant columns
-  select(ObservationID, species, trait, StdValue, dataset, leaf_age) |>
+  select(ObservationID, species, trait, StdValue, dataset, leaf_age, Dataset) |>
   # Standardize column names
-  rename(envelope_ID = ObservationID, value = StdValue) |>
+  rename(envelope_ID = ObservationID, value = StdValue, source = Dataset) |>
   # Flag datapoints for removal
   mutate(flag = case_when(
     trait == "leaf_area" & value > 0.2 ~ "above maximum",
