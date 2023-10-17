@@ -118,3 +118,10 @@ ggplot(LitReview.datasets,
   ggh4x::facet_grid2(species~trait, scales = "free_y", independent = "y") +
   theme_bw() +
   theme(legend.position = "none")
+
+# Summarize available data ----
+LitReview.datasets.sum = LitReview.datasets |>
+  separate(source, into = c("Author", "Year", "Figure"), sep = "_") |>
+  summarize(n = length(value.converted), .by = c(Author, Year, metric, species, trait,leaf_age)) |>
+  pivot_wider(names_from = species, values_from = n) |>
+  write.csv("output/2023.10.17_LitReviewData_summary.csv")
