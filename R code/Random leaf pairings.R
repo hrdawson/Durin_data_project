@@ -97,7 +97,8 @@ durin.random.corr = durin.random |>
   ) |>
   select(-c(pairedID_thick, corr_thick)) |>
   # Factor leaf age levels
-  mutate(leaf_age = factor(leaf_age, levels = c("young", "old")),
+  mutate(leaf_age = factor(leaf_age, levels = c("young", "old", "unspecified"),
+                           labels = c("current", "previous", "unspecified")),
          trait = factor(trait, levels = c( "SLA", "leaf_area", "dry_mass_g", "wet_mass_g",
                                            "LDMC", "leaf_thickness"),
                         labels = c("SLA (cm^2/g)", "Leaf area (cm^2)", "Dry mass (g)",
