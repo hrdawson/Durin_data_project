@@ -16,10 +16,8 @@ durin.random = durin |>
   mutate(paired = 1:n(),
          pairedID = paste0(plantID.unique, "_", paired)) |>
   relocate(plantID.unique, leaf_age, paired, pairedID) |>
-  # Factor leaf age levels
-  mutate(leaf_age = factor(leaf_age, levels = c("young", "old"))) |>
   # Tidy in long form
-  relocate(c(dry_mass_g, wet_mass_g, leaf_area, SLA, leaf_thickness_1_mm:leaf_thickness_3_mm),
+  relocate(c(dry_mass_g, wet_mass_g, leaf_area, SLA, LDMC, leaf_thickness_1_mm:leaf_thickness_3_mm),
            .after = leaf_nr) |>
   pivot_longer(cols = dry_mass_g:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
   # Standardize traits
@@ -32,14 +30,17 @@ durin.random = durin |>
     trait == "SLA" & value > 400 ~ NA,
     trait == "wet_mass_g" & species == "Empetrum nigrum" & value > 0.005 ~ NA,
     trait == "dry_mass_g" & species == "Empetrum nigrum" & value > 0.0025 ~ NA,
+    trait == "LDMC" & value > 1000 ~ NA,
     TRUE ~ value
   )) |>
-  # Add correlation from object below
-  left_join(durin.random.corr)
+  # Remove extraneous columns
+  select(-c(bulk_nr_leaves_original, wet_mass_g_original, dry_mass_g_original, bulk_nr_leaves_scanned,
+            leaf_area_original, priority, bulk_nr_leaves)) |>
+  distinct()
 
 
 # Calculate correlation directions
-durin.random.corr = durin.random |>
+durin.random.corr.notthick = durin.random |>
   # Filter out leaf thickness because that's a puzzle
   filter(trait != "leaf_thickness") |>
   # Select only the relevant columns
@@ -52,13 +53,57 @@ durin.random.corr = durin.random |>
     old > young ~ "negative",
     young > old ~ "positive"
   )) |>
-  # Hold onto only useful variables
-  select(-c(old, young))
+  # Pivot back to tidy mode
+  pivot_longer(cols = old:young, values_to = "value", names_to = "leaf_age")
 
+durin.random.corr.thickness = durin.random |>
+  # Filter to only leaf thickness to unpuzzle
+  filter(trait == "leaf_thickness") |>
+  # Add random row numbers for sorting
+  # Seed: 2023
+  # Modified from https://stackoverflow.com/questions/15077515/random-number-generation-for-each-row
+  mutate(random_thick = runif(n())) |>
+  # Order to assign pair IDs for thickness measures
+  arrange(plantID.unique, leaf_age, random, random_thick) |>
+  group_by(plantID.unique, leaf_age, trait) |>
+  mutate(paired = 1:n(),
+         pairedID_thick = paste0(plantID.unique, "_", paired)) |>
+  relocate(plantID.unique, leaf_age, random, paired, pairedID_thick) |>
+  # Filter to only relevant variables
+  select(pairedID_thick, trait, leaf_age, value) |>
+  # Pivot out so we can compare old and new
+  pivot_wider(names_from = leaf_age, values_from = value) |>
+  # Calculate correlation
+  mutate(corr_thick = case_when(
+    old > young ~ "negative",
+    young > old ~ "positive"
+  )) |>
+  # Pivot back to tidy mode
+  pivot_longer(cols = old:young, values_to = "value", names_to = "leaf_age")
+
+durin.random.corr = durin.random |>
+  # Add correlation from object below
+  left_join(durin.random.corr.notthick) |>
+  left_join(durin.random.corr.thickness) |>
+  # Merge thickness correlations
+  mutate(pairedID = case_when(
+    trait == "leaf_thickness" ~ pairedID_thick,
+    TRUE ~ pairedID
+  ),
+  corr = case_when(
+    trait == "leaf_thickness" ~ corr_thick,
+    TRUE ~ corr
+  )
+  ) |>
+  select(-c(pairedID_thick, corr_thick)) |>
+  # Factor leaf age levels
+  mutate(leaf_age = factor(leaf_age, levels = c("young", "old")))
+
+# Visualize ----
 library(viridis)
 library(ggh4x)
 
-ggplot(durin.random, aes(x = leaf_age, y = value)) +
+ggplot(durin.random.corr, aes(x = leaf_age, y = value)) +
   geom_boxplot() +
   geom_line(aes(group=pairedID, color = corr), alpha = 0.1) +
   scale_color_manual(values = c("blue", "red", "grey")) +
