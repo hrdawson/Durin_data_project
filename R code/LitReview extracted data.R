@@ -16,10 +16,14 @@ IturrateGarcia = read.csv("raw_data/LitReview Figures/Iturrate-Garcia_2021.csv")
     trait == "LDMC" ~ "mg g",
     trait == "leaf_area" ~ "cm2")
   ) |>
-  drop_na(value)
+  drop_na(value) |>
+  # Add in source
+  add_column(source = "IturrateGarcia")
 
 Wakui = read.csv("raw_data/LitReview Figures/Wakui_2021.csv") |>
-  mutate(trait = replace(trait, trait == "leaf_mass", "dry_mass_g"))
+  mutate(trait = replace(trait, trait == "leaf_mass", "dry_mass_g")) |>
+  # Add in source
+  add_column(source = "Wakui")
 
 # Read in collated data ----
 
