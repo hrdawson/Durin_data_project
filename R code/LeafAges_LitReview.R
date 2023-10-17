@@ -22,7 +22,7 @@ tempLitReview <- map_df(set_names(filesLitReview), function(file) {
   # Split so that each tag is its own column
   tidyr::separate_wider_delim(tags, delim = ";", names_sep = "X", too_few = "align_start") |>
   # Pivot tags
-  pivot_longer(cols = tagsX1:tagsX47, names_to = "X", values_to = "tag") |>
+  pivot_longer(cols = tagsX1:tagsX48, names_to = "X", values_to = "tag") |>
   select(-X) |>
   drop_na(tag) |>
   # remove leading spaces
@@ -136,11 +136,11 @@ studies.actual = specieslist |>
   # Filter out irrelevant articles
   drop_na(species) |>
   # Filter to studies with leaf traits
-  filter(Key %in% keeplist) |>
+  filter(Key %in% keeplist | Key %in% keeplist.broad) |>
   # Filter to studies with actual measurements
   filter(Key %in% actuallist) |>
   # Filter to relevant tags
-  filter(tag %in% alltags) |>
+  filter(tag %in% alltags | tag %in% relevant.tags.broad) |>
   distinct() |>
   # Separate out variables
   separate(tag, into = c("variable", "value"), sep = ":") |>
@@ -158,6 +158,13 @@ studies.actual = specieslist |>
   # Pivot to see completeness
   select(-species) |>
   pivot_wider(names_from = "variable", values_from = "value", values_fill = NA)
+
+# https://stackoverflow.com/questions/48024266/save-a-data-frame-with-list-columns-as-csv-file
+studies.actual %>%
+  rowwise() %>%
+  mutate_if(is.list, ~paste(unlist(.), collapse = '|')) %>%
+  arrange(PublicationYear) |>
+  write.csv('output/2023.10.17_CheckLitCompleteness.csv', row.names = FALSE)
 
 # Visualize ----
 ## Calculate by percentage ----
@@ -222,48 +229,6 @@ ggplot(litreview.percents |>
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
 ggsave("visualizations/2023.09.21_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
-
-# Make table of available database info ----
-TRY.sum = trydata |>
-  group_by(species, trait) |>
-  summarize(n = length(trait)) |>
-  pivot_wider(names_from = species, values_from = n) |>
-  arrange(trait)
-
-TRY.sum.spp = TRY.sum |>
-  group_by(`Empetrum nigrum`, `Vaccinium vitis-idaea`) |>
-  summarize(n = sum())
-
-write.csv(TRY.sum, "output/2023.09.08_TRY summary.csv")
-
-TTT.sum = tundratraits |>
-  filter(AccSpeciesName == "Empetrum nigrum" | AccSpeciesName == "Vaccinium vitis-idaea") |>
-  group_by(AccSpeciesName, Trait) |>
-  summarize(n = length(Trait)) |>
-  pivot_wider(names_from = AccSpeciesName, values_from = n) |>
-  mutate(trait = case_when(
-    Trait == "Leaf area" ~ "leaf_area",
-    Trait == "Leaf area per leaf dry mass (specific leaf area, SLA)" ~ "SLA",
-    Trait == "Leaf dry mass per leaf fresh mass (Leaf dry matter content, LDMC)" ~ "LDMC",
-    Trait == "Leaf dry mass" ~ "dry_mass_g",
-    TRUE ~ "Unknown"
-  )) |>
-  filter(trait != "Unknown") |>
-  select(trait, "Empetrum nigrum", "Vaccinium vitis-idaea") |>
-  arrange(trait)
-
-write.csv(TTT.sum, "output/2023.09.08_TTT summary.csv")
-
-leda.sum = leda |>
-  filter(species == "Vaccinium vitis-idaea" | genus == "Empetrum")  |>
-  filter(general.method %in% c("actual measurement", "actual measurement (following LEDA data standards)")) |>
-  filter(trait != "plant_height") |>
-  group_by(genus, trait) |>
-  summarize(n = length(trait)) |>
-  pivot_wider(names_from = genus, values_from = n) |>
-  arrange(trait)
-
-write.csv(leda.sum, "output/2023.09.08_LEDA summary.csv")
 
 # Broader species and leaf review ----
 # Make list of articles to include ----
@@ -366,6 +331,7 @@ lit.review.broad = map(relevant.tags.broad, str_subset, string = tagcount.broad$
          value = str_replace(value, "VV only", ""),
          value = str_trim(value),
          variable = str_trim(variable))
+
 
 
 ## Prep visuals ----
