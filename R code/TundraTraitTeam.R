@@ -45,10 +45,12 @@ tundratraits.join = tundratraits |>
   # Specify dataset
   mutate(dataset = "TTT",
          leaf_age = "database") |>
+  # Remove datasets we're extracting directly
+  filter(!DataContributor %in% c("Maitane Iturrate Garcia, Gabriela Schaepman-Strub")) |>
   # Select relevant columns
   select(IndividualID, AccSpeciesName, trait, Value, dataset, leaf_age, DataContributor) |>
   # Standardize column names
-  rename(envelope_ID = IndividualID, value = Value, species = AccSpeciesName)
+  rename(envelope_ID = IndividualID, value = Value, species = AccSpeciesName, source = DataContributor)
 
 # Look at variance ----
 ## Empetrum ----
