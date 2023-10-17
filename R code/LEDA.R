@@ -81,4 +81,6 @@ leda.join = leda |>
     trait == "leaf_area" & value <= 0 ~ "below minimum",
     TRUE ~ "okay"
   )) |>
-  filter(flag == "okay")
+  filter(flag == "okay") |>
+  # Remove datasets we're extracting directly
+  filter(source != "Bruun_2001_Table1")
