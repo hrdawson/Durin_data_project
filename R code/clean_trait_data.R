@@ -34,7 +34,7 @@ durin.area = read.csv("output/2023.09.27_LeafScanData_Raw.csv") |>
   select(-c(cutting, X))
 
 # Manually clean errors from dry mass datasheet ----
-durin.drymass = read.csv("raw_data/2023.10.10_DryMassChecks.csv", na.strings=c("","NA")) |>
+durin.drymass = read.csv("raw_data/2023.10.17_DryMassChecks.csv", na.strings=c("","NA")) |>
   # Drop unused columns
   select(-c(X, order.entered)) |>
   # Remove example and non-data
@@ -50,8 +50,17 @@ durin.drymass = read.csv("raw_data/2023.10.10_DryMassChecks.csv", na.strings=c("
     dry_mass_g = as.numeric(dry_mass_g),
     # Add missing (known) values
     dry_mass_g = case_when(
-      envelope_ID == "BED6774" ~ 0.01332,
       envelope_ID == "BPK3465" ~ 0.00249,
+      TRUE ~ dry_mass_g
+    ),
+    # Update to reweighed values
+    dry_mass_g = case_when(
+      envelope_ID == "BKI4712" ~ 0.01521,
+      envelope_ID == "BKJ3045" ~ 0.00228,
+      envelope_ID == "BPK3465" ~ 0.00249,
+      envelope_ID == "BWL8722" ~ 0.05262,
+      envelope_ID == "BWM2473" ~ 0.00341,
+      envelope_ID == "EPP7266" ~ 0.00529,
       TRUE ~ dry_mass_g
     ),
     # Correct typos
@@ -60,13 +69,15 @@ durin.drymass = read.csv("raw_data/2023.10.10_DryMassChecks.csv", na.strings=c("
       envelope_ID == "FDV2375" ~ 0.00097,
       TRUE ~ dry_mass_g
     ),
+    # Remove any possible leading white space
+    envelope_ID = str_trim(envelope_ID)
   ) |>
   # Filter out known bad values/typos
   filter(!(envelope_ID == "EPP7266" & dry_mass_g == 0.00558)) |>
   filter(is.na(flag_DryMass))
 
 # Manually clean errors from main datasheet ----
-durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sogndal Tjøtta Senja Kautokeino_Data only.csv",
+durin = read.csv("raw_data/2023.10.17_DURIN Plant Functional Traits_Lygra Sogndal Tjøtta Senja Kautokeino_Data only.csv",
                  na.strings=c("","NA")) |>
   # Correct Senja
   mutate(siteID = str_replace(siteID, "Senje", "Senja")) |>
@@ -135,7 +146,7 @@ durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sognda
       envelope_ID =="CWZ4784"~ "SE_O_VM_5",
       envelope_ID %in% c("DBV0943", "DBV0943")~ "SE_O_VV_1",
       envelope_ID =="CYR2242"~ "SE_O_VV_3",
-      envelope_ID %in% c("CZD0880", "EUJ5068")~ "SE_O_VV_4",
+      envelope_ID %in% c("CZD0880")~ "SE_O_VV_4",
       envelope_ID =="CMH5663"~ "SO_F_VM_3",
       envelope_ID =="CMX4054"~ "SO_F_VM_4",
       # From cross-checking number of plants per plot
@@ -156,6 +167,8 @@ durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sognda
       envelope_ID == "AZE4205" ~ "LY_O_VM_1",
       envelope_ID == "AZJ4306" ~ "LY_O_VV_5",
       envelope_ID == "EGE6339" ~ "SE_F_VV_2",
+      envelope_ID == "BLM2549" ~ "LY_O_VV_1",
+      envelope_ID == "FIV6929" ~ "LY_F_CV_1",
       # Moving mislabelled plants (RANDOMLY SELECTED FROM PLOT WITH TOO MANY)
       envelope_ID %in% c("BES9911", "BBO5089", "BBK5291") ~ "LY_O_VV_4",
       # Species corrections
@@ -167,8 +180,9 @@ durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sognda
       envelope_ID %in% c("EXQ8322", "EYR2971", "EYV3590", "EZA6532", "DFW2204", "EYG4750", "EYK4044",
                          "DHD0172","DHH3325", "DFM4890", "AZB3929", "CYR2242", "CZD0880","CLA4537",
                          "CLE7064","ARB1083","ATE1699", "ATI1569", "ATX5549", "AYB7940", "AYP7221",
-                         "AYS6617", "AZE4205", "AZJ4306", "AZM0806") ~"Open",
-      envelope_ID %in% c("BIL0759", "EVA9626", "BOW7206", "EGE6339") ~ "Forested",
+                         "AYS6617", "AZE4205", "AZJ4306", "AZM0806", "BZA7321", "DGB6760") ~"Open",
+      envelope_ID %in% c("BIL0759", "EVA9626", "BOW7206", "EGE6339", "EVI4590", "DAM1823",
+                         "BWU3342", "EUJ5068", "CCH4321") ~ "Forested",
       TRUE ~ habitat
     ),
     # Correct plot numbers
@@ -182,17 +196,18 @@ durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sognda
     ),
     # Correct leaf numbers
     leaf_nr = case_when(
-      envelope_ID %in% c("EEF0649", "AHC6687", "CIT4071", "EUZ2000") ~ 1,
-      envelope_ID %in% c("AHD4843") ~ 2,
+      envelope_ID %in% c("EEF0649", "AHC6687", "CIT4071", "EUZ2000", "AMR7444", "BNK1425") ~ 1,
+      envelope_ID %in% c("AHD4843", "ANK2313", "AXV2319") ~ 2,
       envelope_ID %in% c("AHE7194","AGT6887", "BMS6362","DDP2497", "BAL4872", "CWI7147",
-                         "DBE4796", "EVX2488") ~ 3,
+                         "DBE4796", "EVX2488", "ASP1768", "ESX2028", "AAV7693", "ARV5470",
+                         "EGG1367", "FCI5827") ~ 3,
       TRUE ~ leaf_nr
     ),
     # Correct leaf ages
     leaf_age = case_when(
       envelope_ID %in% c("AZG5994", "ASS9832","BBM8747", "BMC0045", "BAG7477", "ETW7892") ~"old",
       envelope_ID %in% c("EVO1776", "EVS4445", "CST5790", "AYE1801", "BJN7368", "CHK1631",
-                         "BAR6091") ~"young",
+                         "BAR6091", "ABG2709") ~"young",
       DroughNet_plotID == 7.3 & species == "Vaccinium myrtillus" ~ "young",
       TRUE ~ leaf_age
     ),
@@ -205,6 +220,7 @@ durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sognda
     leaf_thickness_1_mm = case_when(
       envelope_ID =="DSD6681"~0.0107,
       envelope_ID =="CSP7326"~0.259,
+      envelope_ID == "APK0446" ~ 0.311,
       # From round 2 corrections
       envelope_ID == "ASM6249" ~ 0.114,
       # Round 3 corrections
@@ -225,17 +241,18 @@ durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sognda
     ),
     # Correct plant heights
     plant_height = case_when(
-      envelope_ID %in% c("AWH7022", "ARR7615") ~11.6,
+      envelope_ID %in% c("AWH7022") ~11.6,
       envelope_ID =="DUX5951"~14.8,
       envelope_ID =="DNA2455"~15.4,
       envelope_ID =="ERV2714"~15.5,
-      envelope_ID %in% c("DFX0733", "DGF1762")~17.0,
+      envelope_ID %in% c("DFX0733", "DGF1762", "DGB6760")~17.0,
       envelope_ID =="ANO6821"~17.5,
       envelope_ID =="CHP1113"~41.2,
       envelope_ID %in% c("APH3193", "AJA7257")~49.2,
-      envelope_ID %in% c("APC6542", "AIO8720") ~23.3,
+      envelope_ID %in% c("APC6542", "AIO8720") ~16.5,
       envelope_ID =="AGX3707"~8.1,
       envelope_ID %in% c("BES9911", "BBO5089", "BBK5291") ~ 16.0,
+      envelope_ID == "AWE1721" ~ 10.1,
       TRUE ~ plant_height
     ),
     # Correct species
@@ -266,6 +283,12 @@ durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sognda
       envelope_ID == "JUH4035" ~ 0.00895,
       envelope_ID == "ABZ7857" ~ 0.0172,
       envelope_ID == "EKS3555" ~ 0.00741,
+      envelope_ID == "AOC0254" ~ 0.0603,
+      envelope_ID == "ASK2376" ~ 0.0081,
+      envelope_ID == "ARE1168" ~ 0.0117,
+      envelope_ID == "EEK9473" ~ 0.0110,
+      envelope_ID %in% c("EVL2844", "AJT3009", "ADB4598", "EBR4362", "ANT4890",
+                         "BWM2473")  ~ NA,
       TRUE ~ wet_mass_g),
     # Correct Tjøtta plot switch
     DroughNet_plotID = case_when(
@@ -293,6 +316,9 @@ durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sognda
       envelope_ID =="AFN5166"~3,
       envelope_ID =="EFN3557"~3,
       DroughNet_plotID == 7.3 & plant_height == 17.6 ~ 2,
+      envelope_ID == "AZT0694" ~ 4,
+      envelope_ID == "AXZ4062" ~ 4,
+      envelope_ID == "AZS5721" ~ 4,
       TRUE ~ plant_nr
     ),
     plant_height = case_when(
@@ -321,6 +347,7 @@ durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sognda
   mutate(bulk_nr_leaves = case_when(
     envelope_ID %in% c("BFN9270", "BHY0712", "AYP7221", "ALA0711", "BHK3198",
                        "AUW3217") ~ bulk_nr_leaves_scanned,
+    envelope_ID == "ARE1168" ~ NA,
     envelope_ID %in% c("EES8345") ~ 2, # Leaf cut in half on scan
     TRUE ~ bulk_nr_leaves
   ),
@@ -336,9 +363,8 @@ durin = read.csv("raw_data/2023.10.10_DURIN Plant Functional Traits_Lygra Sognda
          # SLA is calculated from aggregate, not scaled
          SLA = leaf_area_original/dry_mass_g_original,
          # LDMC is calculated from aggregate, not scaled
-         LDMC = (dry_mass_g*1000)/wet_mass_g)) |>
+         LDMC = (dry_mass_g*1000)/wet_mass_g) |>
   # Filter out any complete duplicates
   distinct()
 
-
-# write.csv(durin, "output/2023.09.11_cleanDURIN.csv")
+write.csv(durin, "output/DURIN_clean.csv")
