@@ -143,4 +143,4 @@ ggplot(durin.random.corr |> filter(siteID == "Sogndal"),
         # axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
         axis.text.y = element_text(angle = 90, vjust = 0.5, hjust = 0.5))
 
-ggsave("visualizations/2023.10.17_Sogndal_AgePaired.png", width = 14, height = 10, units = "in")
+ggsave("visualizations/2023.10.18_Sogndal_AgePaired.png", width = 14, height = 10, units = "in")
