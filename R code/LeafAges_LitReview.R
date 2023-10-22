@@ -86,7 +86,7 @@ relevant.tags = c("extractable data", "leaf year",
                   # "Lit:",
                   "measurement type",
                   "trait:", "database source:", "database:",
-                  "location:", "study", "justification", "graph")
+                  "location:", "study", "justification:", "graph:")
 #
 # Filter lit review for visualizations
 # This is inelegant but appears to work
@@ -196,14 +196,14 @@ litreview.levels.value = c(
   # traits
   "leaf area", "leaf mass", "leaf thickness", "LDMC", "LMA", "SLA",
   # justifications
-  "none", "appearance", "testing physiology by age",
+  "none", "standardization", "appearance", "testing physiology by age",
   # graphs
   "years lumped", "years split",
   "unspecified")
 
 litreview.levels.value = c(
   "unspecified", "actual", "February", "winter", "both", "both (alternate)", "no", "Canada", "general literature",
-  "leaf area", "none", "years lumped", "database", "March", "spring", "open", "both (concurrent)", "dataset", "Eurasia",
+  "leaf area", "none", "years lumped", "standardization", "database", "March", "spring", "open", "both (concurrent)", "dataset", "Eurasia",
   "EcoFlora", "leaf mass", "appearance", "years split", "April", "both (mixed)", "early summer", "forested", "current", "means", "Finland",
   "Shidakov2007", "leaf thickness", "testing physiology by age", "May", "late summer", "previous", "Italy", "LEDA", "LDMC",
   "June", "autumn", "Japan", "TRY", "LMA", "July", "Norway", "August", "Russia", "September", "Scotland",
@@ -228,7 +228,7 @@ ggplot(litreview.percents |>
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
-ggsave("visualizations/2023.09.21_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
+# ggsave("visualizations/2023.09.21_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
 
 # Broader species and leaf review ----
 # Make list of articles to include ----
@@ -296,7 +296,7 @@ tagcount.broad = specieslist |>
 relevant.tags.broad = c("leaf year",
                   "sampling month", "sampling season",
                   "trait type:",
-                  "location:", "justification:", "graph:")
+                  "location:", "justification:")
 #
 # Filter lit review for visualizations
 # This is inelegant but appears to work
@@ -396,4 +396,4 @@ ggplot(litreview.percents.broad |>
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
-ggsave("visualizations/2023.09.21_LitReview_metaanalysis_broad.png", width = 10, height = 8, units = "in")
+# ggsave("visualizations/2023.09.21_LitReview_metaanalysis_broad.png", width = 10, height = 8, units = "in")
