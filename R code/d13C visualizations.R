@@ -9,7 +9,14 @@ TTT.d13C = tundratraits |>
          leaf_age = case_when(
            Comments == "new leaves" ~ "current",
            Comments == "old leaves" ~ "previous"
-         ))
+         ),
+         trait = "d13C",
+         # Force envelope_ID type
+         IndividualID = as.character(IndividualID)) |>
+  # Select relevant columns
+  select(IndividualID, AccSpeciesName, trait, Value, dataset, leaf_age, DataContributor) |>
+  # Standardize column names
+  rename(envelope_ID = IndividualID, value = Value, species = AccSpeciesName, source = DataContributor)
 
 # TRY d13C ----
 trydata.d13C = read.csv("raw_data/TRY/29435.csv") |>
@@ -40,3 +47,9 @@ trydata.d13C = read.csv("raw_data/TRY/29435.csv") |>
   select(ObservationID, species, trait, StdValue, dataset, leaf_age) |>
   # Standardize column names
   rename(envelope_ID = ObservationID, value = StdValue)
+
+# Combined datasets
+d13C = TTT.d13C |>
+  bind_rows(trydata.d13C)
+
+table(d13C$species)
