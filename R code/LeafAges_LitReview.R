@@ -1,10 +1,10 @@
-# Read in all lit review files
+# Read in all lit review files ----
+# This is for both lit reviews
 library(janitor)
 # Make file list
 filesLitReview <- dir(path = "raw_data/LitReview", pattern = ".csv", full.names = TRUE, recursive = TRUE)
 
 # Read in data
-
 temp = read_csv(file = "raw_data/LitReview/2023.09.19 Empetrum leaf.csv",
                 col_select = c(-Issue), name_repair = ~ janitor::make_clean_names(., case = "upper_camel"))
 
@@ -28,10 +28,7 @@ tempLitReview <- map_df(set_names(filesLitReview), function(file) {
   # remove leading spaces
   mutate(tag = str_trim(tag))
 
-tempLitReview.tags = as.data.frame(table(tempLitReview$tag))
-
-# Make summary of which papers belong to which species ----
-# First, check that keys are unique
+# Dheck that keys are unique
 # Make sure you have tidylog running for this one!
 keycheck = tempLitReview |>
   select(Key, Title) |>
@@ -40,6 +37,8 @@ keycheck = tempLitReview |>
   # This one should say `distinct: no rows removed`
   distinct()
 
+# Lit review 2: Morphological traits ----
+## Make summary of which papers belong to which species ----
 specieslist = tempLitReview |>
   filter(tag == "Empetrum nigrum" | tag == "Vaccinium vitis-idaea") |>
   # Unique identifier
@@ -47,7 +46,7 @@ specieslist = tempLitReview |>
   rename(species = tag) |>
   distinct()
 
-# Make list of articles to include ----
+## Make list of articles to include ----
 keeplist = tempLitReview |>
   # Filter to the tag with all the studies of interest
   filter(tag == "leaf morphological traits") |>
@@ -56,13 +55,7 @@ keeplist = tempLitReview |>
   #Unique identifier
   pull(Key)
 
-list = as.data.frame(keeplist) |>
-  rename(Key = keeplist) |>
-  inner_join(specieslist)
-
-table(list$species)
-
-# Summarize counts of each tag ----
+## Summarize counts of each tag ----
 tagcount = specieslist |>
   right_join(tempLitReview) |>
     # Filter out irrelevant articles
@@ -79,7 +72,7 @@ tagcount = specieslist |>
   # Filter out the phantom tags
   filter(!tag %in% c("extractable data: full dataset", "extractable data: no"))
 
-# List all the tags that are relevant to my review
+# List all the tags that are relevant to review 2: morpho----
 relevant.tags = c("extractable data", "leaf year",
                   "sampling month", "sampling season",
                   "extractable data", "habitat type",
@@ -87,8 +80,8 @@ relevant.tags = c("extractable data", "leaf year",
                   "measurement type",
                   "trait:", "database source:", "database:",
                   "location:", "study", "justification:", "graph:")
-#
-# Filter lit review for visualizations
+
+## Filter lit review for visualizations----
 # This is inelegant but appears to work
 # From https://gist.github.com/simmwill/dc34d71c2da8f644576afa20cca3bbef
 lit.review = map(relevant.tags, str_subset, string = tagcount$tag) %>%
@@ -118,56 +111,7 @@ lit.review = map(relevant.tags, str_subset, string = tagcount$tag) %>%
   mutate(variable = str_replace(variable, "EN ", ""),
          variable = str_replace(variable, "VV ", ""))
 
-# Check that all fields are filled out for each study ----
-## Complete list of relevant tags ----
-alltags = map(relevant.tags, str_subset, string = tagcount$tag) %>%
-  reduce(union)
-## List of studies with actual measurements ----
-actuallist = tempLitReview |>
-  filter(tag == "measurement type: actual") |>
-  # Unique identifier
-  select(Key) |>
-  distinct() |>
-  pull()
-
-## Create object to check ----
-studies.actual = specieslist |>
-  right_join(tempLitReview) |>
-  # Filter out irrelevant articles
-  drop_na(species) |>
-  # Filter to studies with leaf traits
-  filter(Key %in% keeplist | Key %in% keeplist.broad) |>
-  # Filter to studies with actual measurements
-  filter(Key %in% actuallist) |>
-  # Filter to relevant tags
-  filter(tag %in% alltags | tag %in% relevant.tags.broad) |>
-  distinct() |>
-  # Separate out variables
-  separate(tag, into = c("variable", "value"), sep = ":") |>
-  # Filter out the wrong species ones
-  mutate(drop = case_when(
-    str_starts(variable, "EN") & species == "Vaccinium vitis-idaea" ~ "cut",
-    str_starts(variable, "VV") & species == "Empetrum nigrum" ~ "cut",
-    TRUE ~ "keep"
-  )) |>
-  filter(drop == "keep") |>
-  select(-drop) |>
-  # # Modify variable names
-  # mutate(variable = str_replace(variable, "EN ", ""),
-  #        variable = str_replace(variable, "VV ", "")) |>
-  # Pivot to see completeness
-  select(-species) |>
-  pivot_wider(names_from = "variable", values_from = "value", values_fill = NA)
-
-# https://stackoverflow.com/questions/48024266/save-a-data-frame-with-list-columns-as-csv-file
-studies.actual %>%
-  rowwise() %>%
-  mutate_if(is.list, ~paste(unlist(.), collapse = '|')) %>%
-  arrange(PublicationYear) |>
-  write.csv('output/2023.10.17_CheckLitCompleteness.csv', row.names = FALSE)
-
-# Visualize ----
-## Calculate by percentage ----
+### Calculate percentage ----
 litreview.percents = lit.review |>
   filter(variable != "Lit") |>
   group_by(species, variable) |>
@@ -176,6 +120,9 @@ litreview.percents = lit.review |>
   left_join(lit.review) |>
   mutate(percent = round((n/total), 2))
 
+## Visualize ----
+
+### All value levels in the desired order
 litreview.levels.value = c(
   # measurement
   "actual", "database",
@@ -201,6 +148,7 @@ litreview.levels.value = c(
   "years lumped", "years split",
   "unspecified")
 
+### All value in the desired order layered for coloring
 litreview.levels.value = c(
   "unspecified", "actual", "February", "winter", "both", "both (alternate)", "no", "Canada", "general literature",
   "leaf area", "none", "years lumped", "standardization", "database", "March", "spring", "open", "both (concurrent)", "dataset", "Eurasia",
@@ -210,10 +158,11 @@ litreview.levels.value = c(
   "SLA", "October", "Serbia", "November", "Sweden"
 )
 
+### All levels of the variables
 litreview.levels.variable = c("measurement type", "leaf year", "justification", "graph", "sampling month", "sampling season",
                               "trait", "habitat type", "location", "database")
 
-# All variable by species in stacked barchart
+## All variable by species in stacked barchart ----
 ggplot(litreview.percents |>
          filter(!variable %in% c("database source", "study", "extractable data")) |>
          mutate(value = factor(value, levels = litreview.levels.value),
@@ -230,28 +179,36 @@ ggplot(litreview.percents |>
 
 # ggsave("visualizations/2023.09.21_LitReview_metaanalysis.png", width = 10, height = 8, units = "in")
 
-# Broader species and leaf review ----
-# Make list of articles to include ----
-
+# Lit review 1: Broader species and leaf review ----
+## Make list of articles to include ----
 keeplist.broad = tempLitReview |>
   # Filter to the tag with all the studies of interest
   filter(tag == "fresh leaves measured" | tag == "leaf morphological traits") |>
   #Unique identifier
   pull(Key)
 
-specieslist = tempLitReview |>
-  filter(tag == "Empetrum nigrum" | tag == "Vaccinium vitis-idaea") |>
-  # filter(tag == "Empetrum nigrum") |>
-  # Unique identifier
-  dplyr::select(Key, tag) |>
-  rename(species = tag) |>
-  distinct()
-
 list.broad = as.data.frame(keeplist.broad) |>
   rename(Key = keeplist.broad) |>
   inner_join(specieslist)
 
-# Summarize counts of each tag ----
+## Make list of duplicate studies ----
+duplicates.broad = tempLitReview |>
+  # Filter to relevant studies
+  filter(Key %in% keeplist.broad) |>
+  # Filter to studies that are duplicates |>
+  filter(tag == "duplicate study") |>
+  # Join back in the rest of the dataset
+  select(Key) |>
+  left_join(tempLitReview) |>
+  # Select relevant columns
+  select(Key, Author, PublicationYear, PublicationTitle, Title, tag) |>
+  # Filter to just the tags with study:
+  filter(str_detect(tag, "study:")) |>
+  distinct()  |>
+  # Rename to replace keys
+  rename(key.new = tag)
+
+## Summarize counts of each tag ----
 tagcount.broad = specieslist |>
   right_join(tempLitReview) |>
   # Filter out irrelevant articles
@@ -292,13 +249,13 @@ tagcount.broad = specieslist |>
   filter(!tag %in% c("trait type: freeze tolerance", "trait type: stable isotope", "trait type: radioactive isotope"))
 
 
-# List all the tags that are relevant to my review
+## List all the tags that are relevant to  review 1 ----
 relevant.tags.broad = c("leaf year",
                   "sampling month", "sampling season",
                   "trait type:",
                   "location:", "justification:")
-#
-# Filter lit review for visualizations
+
+# Filter lit review for visualizations ----
 # This is inelegant but appears to work
 # From https://gist.github.com/simmwill/dc34d71c2da8f644576afa20cca3bbef
 lit.review.broad = map(relevant.tags.broad, str_subset, string = tagcount.broad$tag) %>%
@@ -332,9 +289,7 @@ lit.review.broad = map(relevant.tags.broad, str_subset, string = tagcount.broad$
          value = str_trim(value),
          variable = str_trim(variable))
 
-
-
-## Prep visuals ----
+## Calculate by percentage ----
 litreview.percents.broad = lit.review.broad |>
   filter(variable != "Lit") |>
   group_by(species, variable) |>
@@ -343,6 +298,8 @@ litreview.percents.broad = lit.review.broad |>
   left_join(lit.review.broad) |>
   mutate(percent = round((n/total), 2))
 
+
+## Prep visuals ----
 litreview.levels.value = c(
   ##
   "unspecified",
@@ -397,3 +354,51 @@ ggplot(litreview.percents.broad |>
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
 # ggsave("visualizations/2023.09.21_LitReview_metaanalysis_broad.png", width = 10, height = 8, units = "in")
+
+# Check that all fields are filled out for each study ----
+## Complete list of relevant tags ----
+alltags = map(relevant.tags, str_subset, string = tagcount$tag) %>%
+  reduce(union)
+## List of studies with actual measurements ----
+actuallist = tempLitReview |>
+  filter(tag == "measurement type: actual") |>
+  # Unique identifier
+  select(Key) |>
+  distinct() |>
+  pull()
+
+## Create object to check ----
+studies.actual = specieslist |>
+  right_join(tempLitReview) |>
+  # Filter out irrelevant articles
+  drop_na(species) |>
+  # Filter to studies with leaf traits
+  filter(Key %in% keeplist | Key %in% keeplist.broad) |>
+  # Filter to studies with actual measurements
+  filter(Key %in% actuallist) |>
+  # Filter to relevant tags
+  filter(tag %in% alltags | tag %in% relevant.tags.broad) |>
+  distinct() |>
+  # Separate out variables
+  separate(tag, into = c("variable", "value"), sep = ":") |>
+  # Filter out the wrong species ones
+  mutate(drop = case_when(
+    str_starts(variable, "EN") & species == "Vaccinium vitis-idaea" ~ "cut",
+    str_starts(variable, "VV") & species == "Empetrum nigrum" ~ "cut",
+    TRUE ~ "keep"
+  )) |>
+  filter(drop == "keep") |>
+  select(-drop) |>
+  # # Modify variable names
+  # mutate(variable = str_replace(variable, "EN ", ""),
+  #        variable = str_replace(variable, "VV ", "")) |>
+  # Pivot to see completeness
+  select(-species) |>
+  pivot_wider(names_from = "variable", values_from = "value", values_fill = NA)
+
+# https://stackoverflow.com/questions/48024266/save-a-data-frame-with-list-columns-as-csv-file
+studies.actual %>%
+  rowwise() %>%
+  mutate_if(is.list, ~paste(unlist(.), collapse = '|')) %>%
+  arrange(PublicationYear) |>
+  write.csv('output/2023.10.17_CheckLitCompleteness.csv', row.names = FALSE)
