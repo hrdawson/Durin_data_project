@@ -15,7 +15,7 @@ durin.subset.VV = durin |>
 models.VV <- list()
 for (i in c("dry_mass_g", "leaf_area", "SLA", "LDMC")) {
   f <- formula(paste(i, "~leaf_age*habitat +
-                (1|plotNR) + (1|plant_nr)"))
+                (1|DURIN_plot)"))
   models.VV[[i]] <- Anova(lmer(f, data=durin.subset.VV), Type = "II")
 }
 
@@ -26,7 +26,7 @@ models.VV$LDMC
 
 write.csv(as.data.frame(models.VV), "output/2023.10.24_LeafAge_ANOVA_VV.csv")
 
-rand(lmer(SLA ~leaf_age*habitat + (1|plotNR) + (1|plant_nr), data = durin.subset.VV))
+rand(lmer(LDMC ~leaf_age*habitat + (1|DURIN_plot) , data = durin.subset.VV))
 
 # Empetrum nigrum tests ----
 durin.subset.EN = durin |>
@@ -41,7 +41,7 @@ durin.subset.EN = durin |>
 models.EN <- list()
 for (i in c("dry_mass_g", "leaf_area", "SLA", "LDMC")) {
   f <- formula(paste(i, "~leaf_age*habitat +
-                (1|plotNR) + (1|plant_nr)"))
+                (1|DURIN_plot)"))
   models.EN[[i]] <- Anova(lmer(f, data=durin.subset.EN), Type = "II")
 }
 
@@ -52,7 +52,7 @@ models.EN$LDMC
 
 write.csv(as.data.frame(models.EN), "output/2023.10.24_LeafAge_ANOVA_EN.csv")
 
-rand(lmer(LDMC ~leaf_age*habitat + (1|plotNR) + (1|plant_nr), data = durin.subset.EN))
+rand(lmer(LDMC ~leaf_age*habitat + (1|DURIN_plot), data = durin.subset.EN))
 
 # Thickness ---
 # Done separately because of the triplicate complication
@@ -65,11 +65,12 @@ durin.subset.thickness = durin |>
     pivot_longer(cols = leaf_thickness_1_mm:leaf_thickness_3_mm, values_to = "leaf_thickness")
 
 
-VV.thickness.lmer = lmer(leaf_thickness ~leaf_age*habitat + (1|DURIN_plot) + (1|plant_nr),
+VV.thickness.lmer = lmer(leaf_thickness ~leaf_age*habitat + (1|DURIN_plot),
                          data = durin.subset.thickness |> filter(species == "Vaccinium vitis-idaea"))
 write.csv((Anova(VV.thickness.lmer, Type = "II")), "output/2023.10.24_LeafAge_ANOVA_VV_thickness.csv")
 
-EN.thickness.lmer = lmer(leaf_thickness ~leaf_age*habitat + (1|DURIN_plot) + (1|plant_nr),
+EN.thickness.lmer = lmer(leaf_thickness ~leaf_age*habitat + (1|DURIN_plot),
                          data = durin.subset.thickness |> filter(species == "Empetrum nigrum"))
 write.csv(Anova(EN.thickness.lmer, Type = "II"), "output/2023.10.24_LeafAge_ANOVA_EN_thickness.csv")
 
+rand(EN.thickness.lmer)
