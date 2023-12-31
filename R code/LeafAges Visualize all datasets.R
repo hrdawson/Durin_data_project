@@ -41,6 +41,27 @@ leda.sum = leda |>
 write.csv(leda.sum, "output/2023.09.08_LEDA summary.csv")
 
 # Bring together the outside datasets with the DURIN dataset
+# Make dataset of outside datasets
+DURIN.database = tundratraits.join |>
+  bind_rows(leda.join, trydata) |>
+  bind_rows(LitReview.datasets |> select(dataset, leaf_age, trait, value.converted, species, source) |>
+              rename(value = value.converted)) |>
+  filter(!trait %in% c("bulk_nr_leaves_clean", "plant_height")) |>
+  # Filter out erroneous values
+  mutate(value = case_when(
+    trait == "wet_mass_g" & value > 0.1 ~ NA,
+    trait == "wet_mass_g" & species == "Empetrum nigrum" & value > 0.02 ~ NA,
+    trait == "dry_mass_g" & species == "Empetrum nigrum" & value > 0.002 ~ NA,
+    TRUE ~ value
+  )) |>
+  # Standardize leaf_ages to reduce chaos
+  mutate(leaf_age = case_when(
+    leaf_age == "database" ~ "unspecified",
+    leaf_age == "both" ~ "unspecified",
+    TRUE ~ leaf_age
+  ))
+
+# write.csv(DURIN.database, "clean_data/DURIN_database.data.csv")
 
 # Make big tibble ----
 DURIN.lit = durin |>
