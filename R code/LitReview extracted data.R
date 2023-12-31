@@ -18,7 +18,7 @@ IturrateGarcia = read.csv("raw_data/LitReview Figures/Iturrate-Garcia_2021.csv")
   ) |>
   drop_na(value) |>
   # Add in source
-  add_column(source = "IturrateGarcia")
+  mutate(source = "IturrateGarcia")
 
 Wakui = read.csv("raw_data/LitReview Figures/Wakui_2021.csv") |>
   mutate(trait = replace(trait, trait == "leaf_mass", "dry_mass_g")) |>
@@ -110,6 +110,8 @@ LitReview.datasets = read.csv("raw_data/LitReview Figures/LitReview extracted da
     TRUE ~ "okay"
   )) |>
   filter(flag == "okay")
+
+# write.csv(LitReview.datasets, "raw_data/LitReview_Datasets.csv")
 
 # Visualize ----
 ggplot(LitReview.datasets,
