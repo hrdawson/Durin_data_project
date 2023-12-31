@@ -19,6 +19,8 @@ TTT.d13C = tundratraits |>
   rename(envelope_ID = IndividualID, value = Value, species = AccSpeciesName, source = DataContributor)
 
 # TRY d13C ----
+# library(rtry)
+
 trydata.d13C = read.csv("raw_data/TRY/29435.csv") |>
   filter(TraitID %in% c(89)) |>
   # Assign same trait names as DURIN
@@ -47,6 +49,10 @@ trydata.d13C = read.csv("raw_data/TRY/29435.csv") |>
   select(ObservationID, species, trait, StdValue, dataset, leaf_age) |>
   # Standardize column names
   rename(envelope_ID = ObservationID, value = StdValue)
+
+# Loader and Rundgren 2008 data ----
+Loader2008 = read.csv("raw_data/Figures/Loader_2008_Fig2_C.csv") |>
+  bind_rows(read.csv("raw_data/Figures/Loader_2008_Fig2_D.csv"))
 
 # Combined datasets
 d13C = TTT.d13C |>
