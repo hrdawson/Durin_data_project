@@ -52,10 +52,14 @@ trydata.d13C = read.csv("raw_data/TRY/29435.csv") |>
 
 # Loader and Rundgren 2008 data ----
 Loader2008 = read.csv("raw_data/Figures/Loader_2008_Fig2_C.csv") |>
-  bind_rows(read.csv("raw_data/Figures/Loader_2008_Fig2_D.csv"))
+  bind_rows(read.csv("raw_data/Figures/Loader_2008_Fig2_D.csv")) |>
+  add_column(dataset = "Literature", trait = "d13C", leaf_age = "database") |>
+  rename(value = d13C) |>
+  select(-y)
 
 # Combined datasets
 d13C = TTT.d13C |>
-  bind_rows(trydata.d13C)
+  bind_rows(trydata.d13C) |>
+  bind_rows(Loader2008)
 
 table(d13C$species)
