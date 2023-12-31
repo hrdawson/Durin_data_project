@@ -17,7 +17,8 @@ ts.d13C = d13C |>
   select(species, trait, value, level)
 
 # Non-parametric bootstrap data ----
-## Not sure I need to use trait_fill, but rolling with it
+## Not sure I need to use trait_fill, ----
+#  but rolling with it
 ts.d13C.traitfill = trait_fill(
   # input data (mandatory)
   comm = ts.comm,
@@ -36,7 +37,7 @@ ts.d13C.traitfill = trait_fill(
   min_n_in_sample = 9
 )
 
-## Non-parametric bootstrap
+## Non-parametric bootstrap ----
 ts.d13C.nonPar <- trait_np_bootstrap(
   ts.d13C.traitfill,
   # Sample size is ten times larger than the number of leaf samples in DURIN
@@ -45,3 +46,7 @@ ts.d13C.nonPar <- trait_np_bootstrap(
   raw = TRUE
 )
 
+## See what it looks like ----
+ggplot(ts.d13C.nonPar, aes(x = value, fill = species))  +
+  geom_histogram() +
+  theme_bw()
