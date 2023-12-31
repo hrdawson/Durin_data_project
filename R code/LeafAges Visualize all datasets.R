@@ -64,6 +64,8 @@ DURIN.database = tundratraits.join |>
 # write.csv(DURIN.database, "clean_data/DURIN_database.data.csv")
 
 # Make big tibble ----
+durin = read.csv("clean_data/DURIN_clean.csv")
+
 DURIN.lit = durin |>
   # Filter to relevant data
   filter(species %in% c("Vaccinium vitis-idaea", "Empetrum nigrum")) |>
