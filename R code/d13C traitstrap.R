@@ -89,10 +89,14 @@ ts.durin = DURIN.lit |>
   # Select columns for quick comparison
   relocate(c(leaf_area, SLA, dry_mass_g, wet_mass_g, LDMC, leaf_thickness_1_mm:leaf_thickness_3_mm), .after = leaf_age) |>
   # Bind in d13C data
-  left_join(ts.d13C.random)
+  left_join(ts.d13C.random) |>
+  # Filter out outliers
+  filter(LDMC < 600) |>
+  filter(SLA < 250)
 
 # Visualize ----
-ggplot(ts.durin, aes(x = SLA, y = d13C, color = leaf_age)) +
+ggplot(ts.durin,
+       aes(x = SLA, y = d13C, color = leaf_age)) +
   geom_point() +
   geom_smooth(inherit.aes = FALSE,
               aes(x = SLA, y = d13C), color = "grey70",
