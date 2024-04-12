@@ -9,7 +9,7 @@ TRY.sum.spp = TRY.sum |>
   group_by(`Empetrum nigrum`, `Vaccinium vitis-idaea`) |>
   summarize(n = sum())
 
-write.csv(TRY.sum, "output/2023.09.08_TRY summary.csv")
+# write.csv(TRY.sum, "output/2023.09.08_TRY summary.csv")
 
 TTT.sum = tundratraits |>
   filter(AccSpeciesName == "Empetrum nigrum" | AccSpeciesName == "Vaccinium vitis-idaea") |>
@@ -27,7 +27,7 @@ TTT.sum = tundratraits |>
   select(trait, "Empetrum nigrum", "Vaccinium vitis-idaea") |>
   arrange(trait)
 
-write.csv(TTT.sum, "output/2023.09.08_TTT summary.csv")
+# write.csv(TTT.sum, "output/2023.09.08_TTT summary.csv")
 
 leda.sum = leda |>
   filter(species == "Vaccinium vitis-idaea" | genus == "Empetrum")  |>
@@ -38,7 +38,7 @@ leda.sum = leda |>
   pivot_wider(names_from = genus, values_from = n) |>
   arrange(trait)
 
-write.csv(leda.sum, "output/2023.09.08_LEDA summary.csv")
+# write.csv(leda.sum, "output/2023.09.08_LEDA summary.csv")
 
 # Bring together the outside datasets with the DURIN dataset
 # Make dataset of outside datasets
@@ -87,7 +87,7 @@ DURIN.lit = durin |>
   bind_rows(tundratraits.join, leda.join, trydata) |>
   bind_rows(LitReview.datasets |> select(dataset, leaf_age, trait, value.converted, species, source) |>
               rename(value = value.converted)) |>
-  filter(!trait %in% c("bulk_nr_leaves_clean", "plant_height")) |>
+  filter(!trait %in% c("bulk_nr_leaves_clean", "plant_height", "d13C")) |>
   # Filter out erroneous values
   mutate(value = case_when(
     trait == "wet_mass_g" & value > 0.1 ~ NA,
@@ -147,4 +147,4 @@ ggplot(DURIN.lit |>
         ggh4x.facet.nestline = element_line(colour = "black"),
         axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5))
 
-ggsave("visualizations/2023.10.16_TraitsTogether_Sogndal.png", width = 10, height = 8, units = "in")
+# ggsave("visualizations/2023.10.16_TraitsTogether_Sogndal.png", width = 10, height = 8, units = "in")
