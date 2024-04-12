@@ -1,3 +1,242 @@
+# Redoing the LitReview code for the new round (cleanly downloaded once)
+# Search used for the new round:
+# ALL=((trait* OR "leaf" OR "leaves") AND (("Vaccinium vitis-idaea" OR “vitis-idaea” OR ("lingon*" OR puolukka OR "mountain cranberr*" OR "partridgeberr*" OR "cowberr*")) OR  (("Empetrum" AND ("hermaphroditum" OR "nigrum")) OR "E hermaphroditum" OR "E nigrum" OR ("crowberr*" OR kragebær OR sortebær OR krekebær OR krøkebær OR kråkebær OR kråkbär OR kråkris OR Variksenmarja OR mustavariksenmarja)) OR “dwarf shrub*”  OR ((ericoid* OR ericac*) AND shrub*)))
+
+# Read in data ----
+LitReview.leaves.all = read.csv("raw_data/2024.04.10_Leaves.csv", na.strings = c(" ", "")) |>
+  # Make unified tag column
+  mutate(tags = paste0(Manual.Tags, ";", Automatic.Tags),
+         tags = str_replace(tags, "; ", ";")) |>
+  # Drop unnecessary columns
+  select(Key, Author, Publication.Year, Publication.Title, Title, DOI, tags) |>
+  # Split so that each tag is its own column
+  tidyr::separate_wider_delim(tags, delim = ";", names_sep = "X", too_few = "align_start") |>
+  # Pivot tags
+  pivot_longer(cols = tagsX1:tagsX52, names_to = "X", values_to = "tag")|>
+  select(-X) |>
+  # For some reason NA strings aren't being read as NA. Filtering manually instead
+  filter(tag != "NA") |>
+  # remove leading spaces
+  mutate(tag = str_trim(tag))
+
+# Make lists to filter by and assign values by ----
+## Which studies to keep ----
+LitReview.leaves.keepList = LitReview.leaves.all |>
+  # Filter to just studies being kept
+  filter(tag == "status: keep") |>
+  # Isolate their IDs
+  pull(Key)
+
+## Which tags to keep ----
+LitReview.leaves.tagList = LitReview.leaves.all |>
+  # All tags of interest include a colon
+  filter(str_detect(tag, ":")) |>
+  # Make a list of unique tags
+  select(tag) |>
+  distinct() |>
+  pull(tag)
+
+## Which papers belong to which species ----
+LitReview.leaves.speciesList = LitReview.leaves.all |>
+  filter(tag == "Empetrum nigrum" | tag == "Vaccinium vitis-idaea") |>
+  # Unique identifier
+  select(Key, tag) |>
+  rename(species = tag) |>
+  distinct()
+
+## Which papers have morpho data ----
+LitReview.leaves.morphoList = LitReview.leaves.all |>
+  filter(str_detect(tag, "trait type: morphological")) |>
+  # Isolate their IDs
+  pull(Key)
+
+## Which papers have database data ----
+LitReview.leaves.databaseList = LitReview.leaves.all |>
+  filter(str_detect(tag, "measurement type: database")) |>
+  # Isolate their IDs
+  pull(Key)
+
+## Which papers need a justification -----
+LitReview.leaves.justificationList = LitReview.leaves.all |>
+  filter(tag != "VV leaf year: unspecified" & tag != "EN leaf year: unspecified") |>
+  filter(str_detect(tag, "leaf year")) |>
+  select(Key) |>
+  distinct() |>
+  pull(Key)
+
+## Which papers need graph data -----
+LitReview.leaves.graphList = LitReview.leaves.all |>
+  filter(str_detect(tag, "leaf year: both")) |>
+  filter(str_detect(tag, "concurrent")) |>
+  pull(Key)
+
+# Compile into useful dataset ----
+LitReview.leaves.traits = LitReview.leaves.all |>
+  # Filter to relevant studies
+  filter(Key %in% LitReview.leaves.keepList) |>
+  # Filter to relevant tags
+  filter(tag %in% LitReview.leaves.tagList) |>
+  # Separate out variables
+  separate(tag, into = c("variable", "value"), sep = ":") |>
+  # Remove the white space
+  mutate(variable = str_trim(variable),
+         value = str_trim(value)) |>
+  # Remove tags we're no longer interested in
+  filter(!(variable %in% c("C", "N", "language", "Lit", "study", "status"))) |>
+  filter(!(value %in% c("BVOC", "iWUE", "leaf nitrogen"))) |>
+  # Filter out recategorized tags
+  filter(!value %in% c("stable isotope", "radioactive isotope")) |>
+  # Add in species data
+  left_join(LitReview.leaves.speciesList) |>
+  # Filter out the wrong species ones
+  mutate(drop = case_when(
+    str_detect(variable, "EN ") & species == "Vaccinium vitis-idaea" ~ "cut",
+    str_detect(variable, "VV ") & species == "Empetrum nigrum" ~ "cut",
+    str_detect(value, "EN ") & species == "Vaccinium vitis-idaea" ~ "cut",
+    str_detect(value, "VV ") & species == "Empetrum nigrum" ~ "cut",
+    TRUE ~ "keep"
+  )) |>
+  filter(drop == "keep") |>
+  select(-drop) |>
+  # Modify variable names
+  mutate(value = str_replace(value, "EN only", ""),
+         value = str_replace(value, "VV only", ""),
+         value = str_trim(value),
+         variable = str_replace(variable, "EN ", ""),
+         variable = str_replace(variable, "VV ", ""),
+         variable = str_trim(variable))
+
+## Export the useful dataset -----
+write.csv(LitReview.leaves.traits, "clean_data/LitReview_leaves.csv")
+
+# Summarise all the tags ----
+LitReview.leaves.tagCount = LitReview.leaves.traits |>
+  # Group and count
+  group_by(species, variable, value) |>
+  summarize(n = length(Key)) |>
+  ungroup()
+
+LitReview.leaves.totals = LitReview.leaves.traits |>
+  group_by(species, variable) |>
+  summarize(total = length(Key)) |>
+  ungroup()
+
+LitReview.leaves.tagPercentage = LitReview.leaves.tagCount |>
+  left_join(LitReview.leaves.totals) |>
+  mutate(percent = round((n/total), 2))
+
+# Visualize all the tags (messy!)----
+ggplot(LitReview.leaves.tagPercentage,
+       aes(x = species, y = percent, fill = value)) +
+  geom_bar(position="fill", stat="identity", color = "black") +
+  geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.7)) +
+  geom_text(aes(label = n), size = 3, position = position_stack(vjust = 0.3)) +
+  facet_grid(~variable) +
+  labs(x = "", y = "Percent of studies") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
+
+# Data cleaning -----
+## List all the tags that all studies should have
+tags.allTraits = data.frame(variable = c("leaf year", "sampling month", "sampling season", "trait type", "location"))
+
+tags.morpho = data.frame(variable = c(
+  "measurement type",
+  "extractable data",
+  "leaf year",
+  "sampling month",
+  "trait",
+  "habitat type",
+  "location"
+))
+
+## Check that all studies do have these data ----
+LitReview.leaves.tagCheck = LitReview.leaves.traits |>
+  # Remove database-based papers
+  filter(!(Key %in% LitReview.leaves.databaseList)) |>
+  # Filter to needed tags
+  filter(variable %in% tags.allTraits$variable) |>
+  # Select the relevant columns
+  select(Key, variable, value) |>
+  # make sure each variable is given only once
+  slice_sample(by = c(Key, variable)) |>
+  # Create NAs for missing variables
+  pivot_wider(names_from = variable, values_from = value) %>%
+  # Replace NAs with searchable values
+  replace(is.na(.), "no value") |>
+  # Pivot back
+  pivot_longer(cols = location:'trait type', names_to = "variable", values_to = "value") |>
+  # Filter to the problems
+  filter(value == "no value")
+
+## Check that all morphological studies have their data ----
+LitReview.leaves.tagCheck.morpho = LitReview.leaves.traits |>
+  # Limit to just morpho papers
+  filter(Key %in% LitReview.leaves.morphoList) |>
+  # Remove database-based papers
+  filter(!(Key %in% LitReview.leaves.databaseList)) |>
+  # Filter to needed tags
+  filter(variable %in% tags.morpho$variable) |>
+  # Select the relevant columns
+  select(Key, variable, value) |>
+  # make sure each variable is given only once
+  slice_sample(by = c(Key, variable)) |>
+  # Create NAs for missing variables
+  arrange(variable) |>
+  pivot_wider(names_from = variable, values_from = value) %>%
+  # Replace NAs with searchable values
+  replace(is.na(.), "no value") |>
+  # Pivot back
+  pivot_longer(cols = 'extractable data':trait, names_to = "variable", values_to = "value") |>
+  # Filter to the problems
+  filter(value == "no value")
+
+## Check that all studies stating leaf year have their justification ----
+LitReview.leaves.tagCheck.just = LitReview.leaves.traits |>
+  # Limit to papers with justification needed
+  filter((Key %in% LitReview.leaves.justificationList)) |>
+  # Filter to needed tags
+  filter(variable %in% c("leaf year", "justification")) |>
+  # Select the relevant columns
+  select(Key, variable, value) |>
+  # make sure each variable is given only once
+  slice_sample(by = c(Key, variable)) |>
+  # Create NAs for missing variables
+  pivot_wider(names_from = variable, values_from = value) %>%
+  # Replace NAs with searchable values
+  replace(is.na(.), "no value") |>
+  # Pivot back
+  pivot_longer(cols = 'leaf year':justification, names_to = "variable", values_to = "value") |>
+  # Filter to the problems
+  filter(value == "no value")
+
+LitReview.leaves.tagCheck.graph = LitReview.leaves.traits |>
+  # Limit to papers with graph justification needed
+  filter(Key %in% LitReview.leaves.graphList) |>
+  # Filter to needed tags
+  filter(variable %in% c("leaf year", "graph")) |>
+  # Select the relevant columns
+  select(Key, variable, value) |>
+  # make sure each variable is given only once
+  slice_sample(by = c(Key, variable)) |>
+  # Create NAs for missing variables
+  pivot_wider(names_from = variable, values_from = value) %>%
+  # Replace NAs with searchable values
+  replace(is.na(.), "no value") |>
+  # Pivot back
+  pivot_longer(cols = graph:'leaf year', names_to = "variable", values_to = "value") |>
+  # Filter to the problems
+  filter(value == "no value")
+
+# Make one list of all studies to reanalyse ----
+LitReview.leaves.tagRepair = LitReview.leaves.tagCheck |>
+  bind_rows(LitReview.leaves.tagCheck.morpho, LitReview.leaves.tagCheck.just, LitReview.leaves.tagCheck.graph) |>
+  distinct()
+
+############################
+# ARCHIVED 2024.04.11 -----
+############################
 # Read in all lit review files ----
 # This is for both lit reviews
 library(janitor)
@@ -18,7 +257,7 @@ tempLitReview <- map_df(set_names(filesLitReview), function(file) {
   mutate(tags = paste0(ManualTags, ";", AutomaticTags),
          tags = str_replace(tags, "; ", ";")) |>
   # Drop unnecessary columns
-  select(Key, Author, PublicationYear, PublicationTitle, Title, tags) |>
+  select(Key, Author, PublicationYear, PublicationTitle, Title, Doi, tags) |>
   # Split so that each tag is its own column
   tidyr::separate_wider_delim(tags, delim = ";", names_sep = "X", too_few = "align_start") |>
   # Pivot tags
@@ -28,7 +267,7 @@ tempLitReview <- map_df(set_names(filesLitReview), function(file) {
   # remove leading spaces
   mutate(tag = str_trim(tag))
 
-# Dheck that keys are unique
+# Check that keys are unique
 # Make sure you have tidylog running for this one!
 keycheck = tempLitReview |>
   select(Key, Title) |>
@@ -54,6 +293,14 @@ keeplist = tempLitReview |>
   filter(!Key %in% c("5DJJGLCC", "4EWK5C7D")) |>
   #Unique identifier
   pull(Key)
+
+## Pull DOIs for citationChaser ----
+LitReview.DOIs = tempLitReview |>
+  filter(Key %in% keeplist) |>
+  select(Doi) |>
+  distinct() |>
+  drop_na() |>
+  write.csv("output/2024.04.04_LitReview_DOIs_MorphoKeepList.csv")
 
 ## Summarize counts of each tag ----
 tagcount = specieslist |>
