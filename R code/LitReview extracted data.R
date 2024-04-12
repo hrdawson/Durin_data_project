@@ -73,13 +73,9 @@ LitReview.datasets = read.csv("raw_data/LitReview Figures/LitReview extracted da
     TRUE ~ error.real
   ),
   units = case_when(
-    units.original == "cm2 mg" ~ "cm2 g",
-    units.original == "g m2" ~ "g cm2",
-    units.original == "m2 g" ~ "cm2 g",
-    units.original == "m2 kg" ~ "cm2 g",
+    units.original %in% c("cm2 mg", "m2 g", "m2 kg") ~ "cm2 g",
+    units.original %in% c("g m2", "mg cm2","mg mm2") ~ "g cm2",
     units.original == "mg" ~ "g",
-    units.original == "mg cm2" ~ "g cm2",
-    units.original == "mg mm2" ~ "g cm2",
     units.original == "mm2" ~ "cm2",
     units.original == "um" ~ "mm",
     units.original == "percent" ~ "mg g",
@@ -115,7 +111,7 @@ LitReview.datasets = read.csv("raw_data/LitReview Figures/LitReview extracted da
 
 # Visualize ----
 ggplot(LitReview.datasets,
-       aes(x = leaf_age, y = value.linear, fill = leaf_age)) +
+       aes(x = leaf_age, y = value.converted, fill = leaf_age)) +
   geom_boxplot() +
   ggh4x::facet_grid2(species~trait, scales = "free_y", independent = "y") +
   theme_bw() +
