@@ -1,4 +1,5 @@
 set.seed(2023)
+# set.seed(10)
 
 durin.random = durin |>
   # Filter to only DURIN plots
@@ -124,7 +125,7 @@ ggplot(durin.random.corr, aes(x = leaf_age, y = value)) +
         axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
         axis.text.y = element_text(angle = 90, vjust = 0.5, hjust = 0.5))
 
-ggsave("visualizations/2023.10.17_AgePaired.png", width = 14, height = 10, units = "in")
+# ggsave("visualizations/2023.10.17_AgePaired.png", width = 14, height = 10, units = "in")
 
 # Sogndal only
 ggplot(durin.random.corr |> filter(siteID == "Sogndal"),
@@ -143,4 +144,6 @@ ggplot(durin.random.corr |> filter(siteID == "Sogndal"),
         # axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
         axis.text.y = element_text(angle = 90, vjust = 0.5, hjust = 0.5))
 
-ggsave("visualizations/2023.10.18_Sogndal_AgePaired.png", width = 14, height = 10, units = "in")
+# ggsave("visualizations/2023.10.18_Sogndal_AgePaired.png", width = 14, height = 10, units = "in")
+# ggsave("visualizations/2023.04_04_Sogndal_AgePaired_Seed10.png", width = 14, height = 10, units = "in")
+# ggsave("visualizations/2023.04_04_Sogndal_AgePaired_Seed2023.png", width = 14, height = 10, units = "in")
