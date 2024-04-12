@@ -67,7 +67,8 @@ TRY.VV = trydata |>
   summarize(n = length(trait))
 
 # Read in DURIN data ----
-durin.subset.try = read.csv("output/2023.09.08_cleanDURIN.csv") %>%
+# durin.subset.try = read.csv("output/2023.09.08_cleanDURIN.csv") %>%
+  durin.subset.try = read.csv("clean_data/DURIN_clean.csv") %>%
   # Filter to relevant data
   filter(species %in% c("Vaccinium vitis-idaea", "Empetrum nigrum")) |>
   filter(siteID == "Lygra") |>
@@ -76,14 +77,12 @@ durin.subset.try = read.csv("output/2023.09.08_cleanDURIN.csv") %>%
   # Add DURIN field
   mutate(dataset = "DURIN") |>
   # Select columns for quick comparison
-  relocate(c(leaf_area, bulk_nr_leaves_clean, SLA.wet), .after = plant_height) |>
-  select(-bulk_nr_leaves) |>
+  relocate(c(leaf_area, bulk_nr_leaves, SLA, wet_mass_g), .after = plant_height) |>
+  relocate(calluna_shoot_type, .before = leaf_age) |>
   select(envelope_ID, species, dataset, leaf_age:leaf_thickness_3_mm) |>
   # Calculate individual leaf values
-  mutate(leaf_area = leaf_area/bulk_nr_leaves_clean,
-         wet_mass_g = wet_mass_g/bulk_nr_leaves_clean) |>
-  # Rename SLA for now
-  rename(SLA = SLA.wet) |>
+  mutate(leaf_area = leaf_area/bulk_nr_leaves,
+         wet_mass_g = wet_mass_g/bulk_nr_leaves) |>
   # Tidy in long form
   pivot_longer(cols = plant_height:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
   # Standardize traits
