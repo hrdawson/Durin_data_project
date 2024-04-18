@@ -87,7 +87,7 @@ LitReview.leaves.traits = LitReview.leaves.all |>
   # Filter out recategorized tags
   filter(!value %in% c("stable isotope", "radioactive isotope")) |>
   # Add in species data
-  left_join(LitReview.leaves.speciesList) |>
+  left_join(LitReview.leaves.speciesList, by = "Key") |>
   # Filter out the wrong species ones
   mutate(drop = case_when(
     str_detect(variable, "EN ") & species == "Vaccinium vitis-idaea" ~ "cut",
