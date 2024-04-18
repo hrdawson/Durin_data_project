@@ -26,14 +26,14 @@ durin.random = durin |>
                          trait == "leaf_thickness_1_mm" | trait == "leaf_thickness_2_mm" | trait == "leaf_thickness_3_mm",
                          "leaf_thickness")) |>
   filter(!trait %in% c("bulk_nr_leaves_clean", "plant_height")) |>
-  # replace outliers with NA
-  mutate(value = case_when(
-    trait == "SLA" & value > 400 ~ NA,
-    trait == "wet_mass_g" & species == "Empetrum nigrum" & value > 0.005 ~ NA,
-    trait == "dry_mass_g" & species == "Empetrum nigrum" & value > 0.0025 ~ NA,
-    trait == "LDMC" & value > 600 ~ NA,
-    TRUE ~ value
-  )) |>
+  # # replace outliers with NA
+  # mutate(value = case_when(
+  #   trait == "SLA" & value > 400 ~ NA,
+  #   trait == "wet_mass_g" & species == "Empetrum nigrum" & value > 0.005 ~ NA,
+  #   trait == "dry_mass_g" & species == "Empetrum nigrum" & value > 0.0025 ~ NA,
+  #   trait == "LDMC" & value > 600 ~ NA,
+  #   TRUE ~ value
+  # )) |>
   # Remove extraneous columns
   select(-c(bulk_nr_leaves_original, wet_mass_g_original, dry_mass_g_original, bulk_nr_leaves_scanned,
             leaf_area_original, priority, bulk_nr_leaves)) |>
@@ -104,6 +104,8 @@ durin.random.corr = durin.random |>
                                            "LDMC", "leaf_thickness"),
                         labels = c("SLA (cm^2/g)", "Leaf area (cm^2)", "Dry mass (g)",
                                    "Wet mass (g)","LDMC (mg/g)", "Leaf thickness (mm)")))
+
+write.csv(durin.random.corr |> filter(siteID == "Sogndal"), "output/2024.04.12_Dawson_DURINLeafPairs.csv")
 
 # Visualize ----
 library(viridis)
