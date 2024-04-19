@@ -52,55 +52,94 @@ All R code for the cleaning the raw data is available on the [Durin GitHub](http
 
 The data documentation, including a draft for the data paper is available [here](https://docs.google.com/document/d/13Mky4gZfCzHIZl82zQKX6nb2vRneZXDRVDAmp0a3gdA/edit?usp=sharing) (only available for authors), and the **data dictionaries** are in this below in this readme file.
 
-### Naming conventions for the data and files
+### Naming conventions for the datasets and files
 
 We use **snake_case style** for names and coding.
-Snake_case means that we use lower case letters separated by an underscore, for example *biomass_g*.
+Snake_case means that we use lower case letters separated by an underscore, for example *biomass_g* or *age_class*.
+The one exceptionare siteID, blockID, plotID (legacy from previous projects).
 
-File and variable names should be *meaningful*.
+**File and variable names should be meaningful**.
 Do not use *my_data.csv* or *var1*.
-For a full description of the main variables see table below.
+Follow the naming convention for the main variables (see full description of the main variables in the table below).
 
-We use some **redundancy** in variable names to avoid mistakes.
-BlockID and plotID should contain the higher hierarchical levels.
-For example blockID is a combination of siteID + block number: Lyg1, Lyg2.
-PlotID contains siteID, block number and treatment: Lyg1_open, Lyg1_forest
+We use **redundancy in variable names** to avoid mistakes.
+PlotID should contain the higher hierarchical levels such as siteID, blockID, treatment, habitat, species etc.
+For example plotID contains siteID, habitat, species and plot number: LY_O_VV_1, LY_F_VM_3
 
 | Files or variable  | Naming convention  | Example  |
 |:---|:---|:---|
-| Project  | Project name  |DURIN |
-| Datasets  | Project_Status_Response_Year(s).Extension | DURIN_clean_cflux_2023-2025.csv |
+| File name  | Project_Status_Experiment_Response_Year(s).Extension | DURIN_clean_gradient_cflux_2023-2025.csv |
+|  | Project  |DURIN |
+| | Experiment | 4 corner = 4 main Durin sites, drought = drought experiment at Lygra and Tjotta, gradient = gradient study, nutrient = nutrient experiment |
 |  |  |  |
+| **4 corner study**  |  |
 | date  | Date of data collection| yyyy-mm-dd; do not split year, month and day into several columns |
-| year  | Year of data collection| yyyy; allowed if no specific date is available, try to avoid |
-| site_ID_name  | Unique site name written out fully| Lygra, Sogndal, Senja, Kautokeino and Tjotta |
-| siteID  | Unique site ID, first 2 letters of site name. | LY, SO, SE, and KA, TJ |
+| year  | Year of data collection| yyyy; sometimes there is no specific date, then year can be used |
+| site_ID_name  | Unique full site name | Lygra, Sogndal, Senja, Kautokeino and Tjotta |
+| siteID  | Unique siteID, first 2 letters of site_ID_name. | LY, SO, SE, and KA, TJ |
 | habitat  | Open versus forested habitat  | O, F |
-| species  | Vascular plant taxon names follow for Norway Lid & Lid (Lid J & Lid, 2010). We use full species names. | *Leontopodium nivale* |
+| species  | Vascular plant taxon names follow for Norway Lid & Lid (Lid J & Lid, 2010). We use full species names. For field sheets the names can be abbreviated (see speciesID), but the clean data should contain the full species name | *Vaccinium myrtillus* |
 | speciesID  | 2 letter abbreviation of species | VM, VV, CV, EN, BN |
 | plot_nr  | Unique plot number, numeric value from 1-5. | 1-5 |
 | plotID  | Unique plot ID as a combination of siteID, habitat, speciesID and plot number | LY_O_VV_1, LY_F_VM_1 |
-| responses  | Response variables | cover, biomass, Reco |
+| variable  | Response variable(s) | cover, biomass, Reco |
+| value  | Value of response variable(s) | numeric value |
+| unit  | Unit for response variable(s) | %, µmol m−2 s−1 |
+| other variables  | Other important variables in the dataset | plant nr, remark, data collector, weather, flag |
 |  |  |  |
-| Drought experiment |  |  |
-| site  | Site name | LYG, TJO? |
-| successional_stage  | Vegetation representing post-fire successional stages. | 1, 2, 3 |
-| drought | Drought treatment using rain-out shelters that reduce precipitation by 0, 60 or 90%. 1 = ambient, 2 = moderate, 3 = extreme | 1-3 |
-| plotID | Combination of successional stage and drought.  | 1.2, 1.3 |
+| **DroughtNet experiment** |  |  |
+| site_ID_name  | Site name | Lygra, Tjotta |
+| siteID  | Unique siteID, first 2 letters of site_ID_name. | LY, TJ |
+| age_class  | Vegetation representing post-fire successional stages. | pioneer, building, mature |
+| drought_treatment | Drought treatment using rain-out shelters that reduce precipitation by 0 = ambient, 60 = moderate,  or 90% = extreme | ambient, moderate, extreme|
+| plotID | Unique plot ID as a combination of siteID, age_class, drought_treatment and plot number  | LY_P_PIO_1, LY_M_EXT_3 |
+| droughtNet_plot | Unique plotID from the DroughtNet frames in the field. Correspond with Landpress naming.  | 1.1,1.2,1.3 - 9.1,9.2,9.3 |
+| species  | Vascular plant taxon names follow for Norway Lid & Lid (Lid J & Lid, 2010). We use full species names. For field sheets the names can be abbreviated (see speciesID), but the clean data should contain the full species name | *Vaccinium myrtillus* |
+| speciesID  | 2 letter abbreviation of species | VM, VV, CV, EN |
+|  |  |  |
+| **Nutrient experiment** |  |  |
+| date  | Date of data collection| yyyy-mm-dd; do not split year, month and day into several columns |
+| site_ID_name  | Site name | Lygra |
+| siteID  | Unique siteID, first 2 letters of site_ID_name. | LY |
+| habitat  | Open versus forested habitat  | O, F |
+| age_class  | Vegetation representing post-fire successional stages. | pioneer, building, mature |
+| nitrogen_addition  | Added level of nitrogen | 5, 10, 25, 30 |
+| plot_nr | Unique plot number | 1-5 |
+| plotID | Combination of siteID, habitat, age_class, nitrogen addition and plot number.  | LY_O_BUI_10_3 |
+|  |  |  |
+| **Gradient study** |  |  |
+| date  | ?? | ? |
+| siteID  | ?? | ? |
+| habitat  | Open versus forested habitat  | O, F |
+| plot_nr | Unique plot number | 1-5 |
+| plotID | Combination of siteID, habitat, and plot number.  | ?? |
+
 
 
 ### Organize data sets
 
-Sort the dataset so that the important variable come first, preferable use this order:
+Each dataset should **contain only one response variable**, or several if they are closely related.
+E.g. biomass and carbon flux should be two separate datasets.
+But the functional trait dataset can contain several traits, and the carbon flux dataset can contain GPP, NEE and Reco.
 
-- Date/year
+Datasets should be in a **long format**.
+If you have several response variables (e.g. traits, flux measurements), then use `pivot_long(cols = ..., names_to = "variable", values_to = "value")` to conver the data to a long format.
+Using the names *variable* and *value* for the columns is a standard.
+If you have very different response variables, it can be useful to have a column called *unit*.
+
+When dealing with many different datasets it can be useful to structure them in a similar way.
+Arrange the dataset so that the important variables come first, preferable use this order:
+
+- Year and/or date
 - siteID
-- plotID
 - habitat
 - treatment
+- plotID
 - plantID
 - leafID
-- response_variable (diversity, biomass, flux)
+- variable (diversity, biomass, flux)
+- value
+- unit
 - predictor_variables (temperature level, oceanity)
 - other_variables (remark, data collector, weather)
 
