@@ -4,10 +4,13 @@ durin = read.csv("clean_data/durin_clean.csv")
 
 # Troubleshoot missing plots ----
 durin.sogndal.missingPlot = durin |>
-  filter(siteID == "Sogndal") |>
+  # filter(siteID == "Sogndal") |>
+  filter((siteID %in% c("Lygra", "Tjøtta"))) |>
+  filter(project == "Field - Traits") |>
+  filter(is.na(ageClass)) |>
   filter(is.na(DURIN_plot))
 
-write.csv(durin.sogndal.missingPlot, "output/2024.04.18_SogndalMissingPlot.csv")
+write.csv(durin.sogndal.missingPlot, "output/2024.04.18_LygraMissingPlot.csv")
 
 durin.sogndal.missingPlot.count = durin |>
   filter(siteID == "Sogndal") |>
