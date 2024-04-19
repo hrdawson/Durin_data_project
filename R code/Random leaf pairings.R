@@ -26,14 +26,14 @@ durin.random = durin |>
                          trait == "leaf_thickness_1_mm" | trait == "leaf_thickness_2_mm" | trait == "leaf_thickness_3_mm",
                          "leaf_thickness")) |>
   filter(!trait %in% c("bulk_nr_leaves_clean", "plant_height")) |>
-  # # replace outliers with NA
-  # mutate(value = case_when(
-  #   trait == "SLA" & value > 400 ~ NA,
-  #   trait == "wet_mass_g" & species == "Empetrum nigrum" & value > 0.005 ~ NA,
-  #   trait == "dry_mass_g" & species == "Empetrum nigrum" & value > 0.0025 ~ NA,
-  #   trait == "LDMC" & value > 600 ~ NA,
-  #   TRUE ~ value
-  # )) |>
+  # replace outliers with NA
+  mutate(value = case_when(
+    trait == "SLA" & value > 400 ~ NA,
+    trait == "wet_mass_g" & species == "Empetrum nigrum" & value > 0.005 ~ NA,
+    trait == "dry_mass_g" & species == "Empetrum nigrum" & value > 0.0025 ~ NA,
+    trait == "LDMC" & value > 600 ~ NA,
+    TRUE ~ value
+  )) |>
   # Remove extraneous columns
   select(-c(bulk_nr_leaves_original, wet_mass_g_original, dry_mass_g_original, bulk_nr_leaves_scanned,
             leaf_area_original, priority, bulk_nr_leaves)) |>
@@ -105,7 +105,7 @@ durin.random.corr = durin.random |>
                         labels = c("SLA (cm^2/g)", "Leaf area (cm^2)", "Dry mass (g)",
                                    "Wet mass (g)","LDMC (mg/g)", "Leaf thickness (mm)")))
 
-write.csv(durin.random.corr |> filter(siteID == "Sogndal"), "output/2024.04.12_Dawson_DURINLeafPairs.csv")
+# write.csv(durin.random.corr |> filter(siteID == "Sogndal"), "output/2024.04.12_Dawson_DURINLeafPairs.csv")
 
 # Visualize ----
 library(viridis)
@@ -140,12 +140,13 @@ ggplot(durin.random.corr |> filter(siteID == "Sogndal"),
   facet_nested(species ~ trait, scales = "free", independent = "y",
                nest_line = element_line(linetype = 2)) +
   labs(x = "Leaf year") +
-  theme_bw() +
+  theme_bw(base_size = 14) +
   theme(legend.position = "none", strip.background = element_blank(),
         ggh4x.facet.nestline = element_line(colour = "black"),
         # axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
         axis.text.y = element_text(angle = 90, vjust = 0.5, hjust = 0.5))
 
-# ggsave("visualizations/2023.10.18_Sogndal_AgePaired.png", width = 14, height = 10, units = "in")
+ggsave("visualizations/2023.10.18_Sogndal_AgePaired_Outliers.png", width = 14, height = 10, units = "in")
+ggsave("visualizations/2023.10.18_Sogndal_AgePaired.png", width = 14, height = 10, units = "in")
 # ggsave("visualizations/2023.04_04_Sogndal_AgePaired_Seed10.png", width = 14, height = 10, units = "in")
 # ggsave("visualizations/2023.04_04_Sogndal_AgePaired_Seed2023.png", width = 14, height = 10, units = "in")
