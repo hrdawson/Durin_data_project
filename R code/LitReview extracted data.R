@@ -56,6 +56,7 @@ LitReview.datasets = read.csv("raw_data/LitReview Figures/LitReview extracted da
     units.original == "mg" ~ value.original / 1000,
     units.original == "mm2" ~ value.original / 100,
     units.original == "um" ~ value.original / 1000,
+    units.original == "mm2 mg" ~ value.original * 10,
     units.original == "percent" ~ value.original * 10,
     TRUE ~ value.original
   ),
@@ -73,7 +74,7 @@ LitReview.datasets = read.csv("raw_data/LitReview Figures/LitReview extracted da
     TRUE ~ error.real
   ),
   units = case_when(
-    units.original %in% c("cm2 mg", "m2 g", "m2 kg") ~ "cm2 g",
+    units.original %in% c("cm2 mg", "m2 g", "m2 kg", "mm2 mg") ~ "cm2 g",
     units.original %in% c("g m2", "mg cm2","mg mm2") ~ "g cm2",
     units.original == "mg" ~ "g",
     units.original == "mm2" ~ "cm2",
@@ -100,9 +101,11 @@ LitReview.datasets = read.csv("raw_data/LitReview Figures/LitReview extracted da
   # Filter out traits that can't be converted
   mutate(flag = case_when(
     scale == "ln" ~ "logarithmic",
+    metric == "median" ~ "median",
     trait == "LDMC" & units == "g" ~ "incompatible units",
     trait == "LDMC" & value.converted < 100 ~ "below minimum",
     source == "Lagerström_2013_Fig1" ~ "All values unreasonably high",
+    trait == "leaf_thickness" ~ "No longer included",
     TRUE ~ "okay"
   )) |>
   filter(flag == "okay")
@@ -121,5 +124,5 @@ ggplot(LitReview.datasets,
 LitReview.datasets.sum = LitReview.datasets |>
   separate(source, into = c("Author", "Year", "Figure"), sep = "_") |>
   summarize(n = length(value.converted), .by = c(Author, Year, metric, species, trait,leaf_age)) |>
-  pivot_wider(names_from = species, values_from = n) |>
-  write.csv("output/2023.10.17_LitReviewData_summary.csv")
+  pivot_wider(names_from = species, values_from = n)
+  # write.csv("output/2024.04.18_LitReviewData_summary.csv")
