@@ -3,6 +3,7 @@ durin = read.csv("clean_data/durin_clean.csv")
 source("R code/functions/get_summary_stats_precise.R")
 
 # Plant means -----
+## Calculate based on age group ----
 trait.avg = function(data, leaf.age) {
   data |>
   # Filter to just my species
@@ -75,7 +76,12 @@ durin.traitAvg.all = durin |>
   select(trait, mean) |>
   mutate(group = "all")
 
-# Join all datasets together
+## Calculate based on leaf age weighting ----
+## Dummy data for now ##
+
+
+
+## Join all datasets together ----
 durin.traitAvg = durin.traitAvg.all |>
   bind_rows(durin.traitAvg.curr, durin.traitAvg.prev) |>
   mutate(
@@ -91,7 +97,6 @@ durin.traitAvg.grp = durin.traitAvg |>
   group_by(species, trait, habitat, group) |>
   # get_summary_stats_precise(mean, type = "mean") |>
   summarise(grp.mean = mean(mean))
-
 
 
 # Visualize ----
@@ -113,7 +118,7 @@ ggplot(durin.traitAvg, aes(x=mean, fill=group, linetype = group)) +
     y="Density",
     x= "Trait value"
   ) +
-  theme_minimal() +
+  theme_classic() +
   theme(
     # legend.position="none",
     # strip.text.x = element_blank(),
@@ -122,3 +127,5 @@ ggplot(durin.traitAvg, aes(x=mean, fill=group, linetype = group)) +
     axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
     text=element_text(size=11)
   )
+
+ggsave("visualizations/2024.04.19_TraitDensity.png", width = 10, height = 8, units = "in")
