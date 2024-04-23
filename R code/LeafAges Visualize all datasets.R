@@ -145,10 +145,32 @@ library(viridis)
 library(patchwork)
 
 ## Three traits together ----
-ggplot(DURIN.lit |>
+compareTraits.EN =
+  ggplot(DURIN.lit |>
          filter(trait %in% c("SLA (cm^2/g)", "Leaf area (cm^2)", "Dry mass (g)", "LDMC (mg/g)")) |>
+         filter(species == "Empetrum nigrum") |>
          drop_na(leaf_age),
        aes(x = leaf_age, y = value,fill = dataset, color = dataset)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.5) +
+  geom_point(position = position_jitterdodge(), alpha = 0.5) +
+  scale_x_discrete(guide = "axis_nested") +
+  scale_fill_viridis(discrete=T) +
+  scale_color_viridis(discrete=T) +
+  # scale_y_log10() +
+  facet_nested(~ species + trait, scales = "free", independent = "y",
+               nest_line = element_line(linetype = 2)) +
+  labs(x = "") +
+  theme_bw() +
+  theme(strip.background = element_blank(),
+        ggh4x.facet.nestline = element_line(colour = "black"),
+        axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5))
+
+compareTraits.VV =
+  ggplot(DURIN.lit |>
+           filter(trait %in% c("SLA (cm^2/g)", "Leaf area (cm^2)", "Dry mass (g)", "LDMC (mg/g)")) |>
+           filter(species == "Vaccinium vitis-idaea") |>
+           drop_na(leaf_age),
+         aes(x = leaf_age, y = value,fill = dataset, color = dataset)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.5) +
   geom_point(position = position_jitterdodge(), alpha = 0.5) +
   scale_x_discrete(guide = "axis_nested") +
@@ -163,7 +185,11 @@ ggplot(DURIN.lit |>
         ggh4x.facet.nestline = element_line(colour = "black"),
         axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5))
 
-ggsave("visualizations/2024.04.18_TraitsTogether_Sogndal.png", width = 12, height = 6, units = "in")
+compareTraits.EN + compareTraits.VV +
+  plot_layout(ncol = 1, guides = 'collect')
+
+ggsave("visualizations/2024.04.23_TraitsTogether_Sogndal.png", width = 8, height = 12, units = "in")
+# ggsave("visualizations/2024.04.18_TraitsTogether_Sogndal.png", width = 12, height = 6, units = "in")
 
 ## Calculate coverage ---
 ## Code is from Julia and Pekka's paper

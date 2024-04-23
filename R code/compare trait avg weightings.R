@@ -56,14 +56,11 @@ durin.avgWt = durin.traitAvg.prev |>
   # weights
   mutate(avg = 0.5,
          young = case_when(
-           species == "Empetrum nigrum" ~ runif(n(), 0.1, 0.4),
-           species == "Vaccinium vitis-idaea" ~ runif(n(), 0.5, 0.9)),
+           species == "Empetrum nigrum" ~ runif(n(), 0.1, 0.25),
+           species == "Vaccinium vitis-idaea" ~ runif(n(), 0.7, 0.9)),
          old = 1 - young
   ) |>
   pivot_longer(cols = c(young, old), names_to = "leaf_age", values_to = "wt")
-
-data = durin
-leaf.age = "all"
 
 trait.avg.wt = function(data, leaf.age, weight){
   data |>
@@ -132,15 +129,74 @@ durin.traitAvg.grp = durin.traitAvg |>
   summarise(grp.mean = mean(wt.mean, na.rm = TRUE))
 
 
+durin.traitAvg.grp.compare = durin.traitAvg.grp |>
+  pivot_wider(names_from = group, values_from = grp.mean) |>
+  group_by(species, habitat, trait) |>
+  mutate(Percentage_Change.newOld = current/previous * 100)
+
 # Visualize ----
 
 library(ggh4x)
 library(viridis)
 library(ggridges)
 
-ggplot(durin.traitAvg, aes(x=wt.mean, fill=group, linetype = group)) +
+## Habitats on the same scale
+compareAges.EN =
+  ggplot(durin.traitAvg |> filter(species == "Empetrum nigrum"),
+         aes(x=wt.mean, fill=group, linetype = group)) +
   geom_density(alpha=0.5, linewidth = 0.6) +
-  geom_vline(data=durin.traitAvg.grp, aes(xintercept=grp.mean, color=group, linetype= group)) +
+  geom_vline(data=durin.traitAvg.grp |> filter(species == "Empetrum nigrum"),
+                                               aes(xintercept=grp.mean, color=group, linetype= group)) +
+  scale_fill_viridis(discrete=T) +
+  scale_colour_viridis(discrete=T) +
+  scale_linetype_manual(values = c("dotted", "dotted", "longdash", "solid")) +
+  scale_y_continuous(position = "left") +
+  facet_nested(species + habitat ~ trait, scales = "free", independent = "y",
+               nest_line = element_line(linetype = 2)) +
+  labs(y="Density", x= "Trait value") +
+  theme_classic() +
+  theme(
+    # legend.position="none",
+    # strip.text.x = element_blank(),
+    strip.background = element_blank(),
+    ggh4x.facet.nestline = element_line(colour = "black"),
+    axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
+    text=element_text(size=11))
+
+compareAges.VV =
+  ggplot(durin.traitAvg |> filter(species == "Vaccinium vitis-idaea"),
+       aes(x=wt.mean, fill=group, linetype = group)) +
+  geom_density(alpha=0.5, linewidth = 0.6) +
+  geom_vline(data=durin.traitAvg.grp |> filter(species == "Vaccinium vitis-idaea"),
+             aes(xintercept=grp.mean, color=group, linetype= group)) +
+  scale_fill_viridis(discrete=T) +
+  scale_colour_viridis(discrete=T) +
+  scale_linetype_manual(values = c("dotted", "dotted", "longdash", "solid")) +
+  scale_y_continuous(position = "left") +
+  facet_nested(species + habitat ~ trait, scales = "free", independent = "y",
+               nest_line = element_line(linetype = 2)) +
+  labs(y="Density", x= "Trait value") +
+  theme_classic() +
+  theme(
+    # legend.position="none",
+    # strip.text.x = element_blank(),
+    strip.background = element_blank(),
+    ggh4x.facet.nestline = element_line(colour = "black"),
+    axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
+    text=element_text(size=11)
+  )
+
+compareAges.EN + compareAges.VV +
+  plot_layout(ncol = 1, guides = 'collect')
+
+ggsave("visualizations/2024.04.23_TraitDensity.png", width = 12, height = 8, units = "in")
+
+## Habitats on separate scales
+ggplot(durin.traitAvg,
+         aes(x=wt.mean, fill=group, linetype = group)) +
+  geom_density(alpha=0.5, linewidth = 0.6) +
+  geom_vline(data=durin.traitAvg.grp,
+             aes(xintercept=grp.mean, color=group, linetype= group)) +
   scale_fill_viridis(discrete=T) +
   scale_colour_viridis(discrete=T) +
   scale_linetype_manual(values = c("dotted", "dotted", "longdash", "solid")) +
@@ -158,8 +214,10 @@ ggplot(durin.traitAvg, aes(x=wt.mean, fill=group, linetype = group)) +
     text=element_text(size=11)
   )
 
-ggsave("visualizations/2024.04.23_TraitDensity.png", width = 10, height = 8, units = "in")
+ggsave("visualizations/2024.04.23_TraitDensity_Independent.png", width = 12, height = 8, units = "in")
 
+
+# Ridgeplot version
 ggplot(durin.traitAvg, aes(x=mean, y = group, fill=group, linetype = group)) +
   geom_density_ridges(alpha=0.5, linewidth = 0.6, scale = 2.5) +
   geom_vline(data=durin.traitAvg.grp, aes(xintercept=grp.mean, color=group),
@@ -168,7 +226,7 @@ ggplot(durin.traitAvg, aes(x=mean, y = group, fill=group, linetype = group)) +
   scale_colour_viridis(discrete=T) +
   scale_linetype_manual(values = c("dotted", "dotted", "solid")) +
   # scale_y_continuous(position = "left") +
-  facet_nested(species + habitat ~ trait, scales = "free", independent = "all",
+  facet_nested(species + habitat ~ trait, scales = "free_y", independent = "y",
                nest_line = element_line(linetype = 2)) +
   labs(
     y="Density",
