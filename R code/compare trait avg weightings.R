@@ -3,7 +3,9 @@ durin = read.csv("clean_data/durin_clean.csv")
 source("R code/functions/get_summary_stats_precise.R")
 
 # Plant means -----
+
 ## Calculate based on age group ----
+
 trait.avg = function(data, leaf.age) {
   data |>
   # Filter to just my species
@@ -23,7 +25,7 @@ trait.avg = function(data, leaf.age) {
   select(species, habitat, DURIN_plot, plantID.unique, leaf_age, leaf_thickness_1_mm, leaf_thickness_2_mm, leaf_thickness_3_mm,
          wet_mass_g:LDMC) |>
   relocate(c(dry_mass_g, wet_mass_g, leaf_area, SLA, LDMC, leaf_thickness_1_mm:leaf_thickness_3_mm),
-           .after = leaf_age) |>
+           .after = leaf_age)
   pivot_longer(cols = dry_mass_g:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
   # Standardize traits
   mutate(trait = replace(trait,
@@ -34,9 +36,8 @@ trait.avg = function(data, leaf.age) {
   # Calculate averages
   group_by(DURIN_plot, species, habitat, plantID.unique, leaf_age, trait) |>
   # get_summary_stats_precise(type = "mean") |>
-  summarise_all(list(~mean(.),~sd(.),
-                ~list(c(summary(.))))) %>% unnest_wider(list) |>
-  select(trait, mean) |>
+  summarize(wt.mean = mean(value, na.rm = TRUE)) |>
+  select(trait, wt.mean) |>
   # Add ID
   mutate(group = leaf.age)
 }
@@ -44,7 +45,28 @@ trait.avg = function(data, leaf.age) {
 durin.traitAvg.prev = trait.avg(durin, "old")
 durin.traitAvg.curr = trait.avg(durin, "young")
 
-durin.traitAvg.all = durin |>
+## Calculate weights ----
+## Dummy data for now ##
+set.seed(2023)
+
+durin.avgWt = durin.traitAvg.prev |>
+  ungroup() |>
+  select(plantID.unique, species) |>
+  distinct() |>
+  # weights
+  mutate(avg = 0.5,
+         young = case_when(
+           species == "Empetrum nigrum" ~ runif(n(), 0.1, 0.4),
+           species == "Vaccinium vitis-idaea" ~ runif(n(), 0.5, 0.9)),
+         old = 1 - young
+  ) |>
+  pivot_longer(cols = c(young, old), names_to = "leaf_age", values_to = "wt")
+
+data = durin
+leaf.age = "all"
+
+trait.avg.wt = function(data, leaf.age, weight){
+  data |>
   # Filter to just my species
   filter(species %in% c("Empetrum nigrum", "Vaccinium vitis-idaea")) |>
   # Filter to just Sogndal
@@ -71,47 +93,81 @@ durin.traitAvg.all = durin |>
   # Calculate averages
   group_by(DURIN_plot, species, habitat, plantID.unique, leaf_age, trait) |>
   # get_summary_stats_precise(type = "mean") |>
-  summarise_all(list(~mean(.),~sd(.),
-                     ~list(c(summary(.))))) %>% unnest_wider(list) |>
-  select(trait, mean) |>
-  mutate(group = "all")
+  summarize(mean = mean(value, na.rm = TRUE)) |>
+    # Add in weights
+    left_join(durin.plantAvgWeight)
+  # calculate weighted means
+  mutate(wt.mean.partial = mean * {{ weight }}) |>
+  select(trait, wt.mean.partial) |>
+  pivot_wider(names_from = leaf_age, values_from = wt.mean.partial) |>
+  # sum weighted means
+  mutate(wt.mean = young + old,
+         group = leaf.age) |>
+  select(-c(young, old))
+}
 
-## Calculate based on leaf age weighting ----
-## Dummy data for now ##
-
+durin.traitAvg.all = trait.avg.wt(durin, "all", avg)
+durin.traitAvg.age = trait.avg.wt(durin, "age weight", wt)
 
 
 ## Join all datasets together ----
 durin.traitAvg = durin.traitAvg.all |>
-  bind_rows(durin.traitAvg.curr, durin.traitAvg.prev) |>
+  bind_rows(durin.traitAvg.age, durin.traitAvg.curr, durin.traitAvg.prev) |>
   mutate(
-  group = factor(group, levels = c("young", "old", "all"),
-                   labels = c("current", "previous", "both")),
+  group = factor(group, levels = c("young", "old", "all", "age weight"),
+                   labels = c("current", "previous", "both (avg)", "age weight")),
   trait = factor(trait, levels = c("leaf_area", "SLA", "LDMC", "dry_mass_g", "leaf_thickness",
                                    "wet_mass_g"),
                  labels = c("Leaf area (cm^2)", "SLA (cm^2/g)", "LDMC (mg/g)", "Dry mass (g)",
-                            "Leaf thickness (mm)", "Wet mass (g)")))
+                            "Leaf thickness (mm)", "Wet mass (g)"))) |>
+  ungroup() |>
+  drop_na(wt.mean) |>
+  select(-leaf_age)
+
 
 # Group means ----
 durin.traitAvg.grp = durin.traitAvg |>
   group_by(species, trait, habitat, group) |>
   # get_summary_stats_precise(mean, type = "mean") |>
-  summarise(grp.mean = mean(mean))
+  summarise(grp.mean = mean(wt.mean, na.rm = TRUE))
 
 
 # Visualize ----
 
 library(ggh4x)
 library(viridis)
+library(ggridges)
 
-ggplot(durin.traitAvg, aes(x=mean, fill=group, linetype = group)) +
+ggplot(durin.traitAvg, aes(x=wt.mean, fill=group, linetype = group)) +
   geom_density(alpha=0.5, linewidth = 0.6) +
+  geom_vline(data=durin.traitAvg.grp, aes(xintercept=grp.mean, color=group, linetype= group)) +
+  scale_fill_viridis(discrete=T) +
+  scale_colour_viridis(discrete=T) +
+  scale_linetype_manual(values = c("dotted", "dotted", "longdash", "solid")) +
+  scale_y_continuous(position = "left") +
+  facet_nested(species + habitat ~ trait, scales = "free", independent = "all",
+               nest_line = element_line(linetype = 2)) +
+  labs(y="Density", x= "Trait value") +
+  theme_classic() +
+  theme(
+    # legend.position="none",
+    # strip.text.x = element_blank(),
+    strip.background = element_blank(),
+    ggh4x.facet.nestline = element_line(colour = "black"),
+    axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
+    text=element_text(size=11)
+  )
+
+ggsave("visualizations/2024.04.23_TraitDensity.png", width = 10, height = 8, units = "in")
+
+ggplot(durin.traitAvg, aes(x=mean, y = group, fill=group, linetype = group)) +
+  geom_density_ridges(alpha=0.5, linewidth = 0.6, scale = 2.5) +
   geom_vline(data=durin.traitAvg.grp, aes(xintercept=grp.mean, color=group),
              linetype="longdash") +
   scale_fill_viridis(discrete=T) +
   scale_colour_viridis(discrete=T) +
   scale_linetype_manual(values = c("dotted", "dotted", "solid")) +
-  scale_y_continuous(position = "left") +
+  # scale_y_continuous(position = "left") +
   facet_nested(species + habitat ~ trait, scales = "free", independent = "all",
                nest_line = element_line(linetype = 2)) +
   labs(
@@ -127,5 +183,3 @@ ggplot(durin.traitAvg, aes(x=mean, fill=group, linetype = group)) +
     axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
     text=element_text(size=11)
   )
-
-ggsave("visualizations/2024.04.19_TraitDensity.png", width = 10, height = 8, units = "in")
