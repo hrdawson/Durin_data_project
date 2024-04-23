@@ -19,6 +19,10 @@ durin.sogndal.missingPlot.count = durin |>
   summarize(n = length(envelope_ID))
 
 # Calculate averages ----
+
+## REMEMBER: SO_O_EN_2 plant4 has only old leaves to make up for missing old leaves collected previously.
+## These should be dropped because they aren't the same plant and don't match with others
+
 durin.plantAvg = durin |>
   # Filter to just my species
   filter(species %in% c("Empetrum nigrum", "Vaccinium vitis-idaea")) |>
@@ -45,13 +49,13 @@ durin.plantAvg = durin |>
   drop_na(value) |>
   # Calculate averages
   group_by(DURIN_plot, species, habitat, plantID.unique, leaf_age, trait) |>
-  get_summary_stats(type = "mean")
+  summarize(mean = mean(value, na.rm = TRUE)) |>
+  ungroup()
 
 # Pair plants ----
 durin.plantAvgPair = durin.plantAvg |>
   # Assign random pairs
   # Wide form needed for this
-  select(-c(variable, n)) |>
   pivot_wider(names_from = "trait", values_from = "mean") |>
   # Add random row numbers for sorting
   # Modified from https://stackoverflow.com/questions/15077515/random-number-generation-for-each-row
@@ -69,12 +73,6 @@ durin.plantAvgPair = durin.plantAvg |>
 # Stats! ----
 library(ggpubr)
 ## Test ----
-durin.plantAvgPair.VV = durin.plantAvgPair |>
-  filter(species == "Vaccinium vitis-idaea") |>
-  ungroup() |>
-  select(c(pairedID, leaf_age, habitat,LDMC:wet_mass_g)) |>
-  convert_as_factor(leaf_age, habitat)
-
 
 res.aov <- durin.plantAvgPair |>
   filter(species == "Vaccinium vitis-idaea") |>
@@ -93,3 +91,13 @@ res.aov <- durin.plantAvgPair |>
   rstatix::anova_test(dv = leaf_thickness, wid = pairedID, within = c(leaf_age), between = habitat)
 
 get_anova_table(res.aov)
+
+# Test form-function relationships ----
+## Full correlations ----
+library(GGally)
+
+temp = durin.plantAvg |>
+  dplyr::select(plantID.unique, leaf_age, trait, mean) |>
+  pivot_wider(id_cols = c(plantID.unique, leaf_age), names_from = trait, values_from = mean)
+
+ggpairs(temp |> select(-plantID.unique))
