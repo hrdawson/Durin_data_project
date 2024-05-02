@@ -30,6 +30,8 @@ durin.plantAvg = durin |>
   filter(siteID == "Sogndal") |>
   # Traits only
   filter(project == "Field - Traits") |>
+  # Remove plant 4 because it only has old leaves
+  filter(!plant_nr %in% c(4)) |>
   # Assign indivdual plant numbers
   mutate(
     # Temp code to replace missing plot nr
@@ -66,14 +68,13 @@ durin.plantAvgPair = durin.plantAvg |>
   arrange(DURIN_plot, leaf_age, random) |>
   group_by(DURIN_plot, species, habitat, leaf_age) |>
   mutate(paired = 1:n(),
-         pairedID = paste0(habitat, "_", "plant", paired)) |>
+         pairedID = paste0(DURIN_plot, "_", habitat, "_", "plant", paired)) |>
   relocate(DURIN_plot, leaf_age, paired, pairedID) |>
   select(-random)
 
 # Stats! ----
 library(ggpubr)
 ## Test ----
-
 res.aov <- durin.plantAvgPair |>
   filter(species == "Vaccinium vitis-idaea") |>
   ungroup() |>
@@ -87,10 +88,180 @@ res.aov <- durin.plantAvgPair |>
   filter(species == "Empetrum nigrum") |>
   ungroup() |>
   convert_as_factor(leaf_age, habitat) |>
-  select(pairedID, leaf_age, habitat, leaf_thickness) |>
-  rstatix::anova_test(dv = leaf_thickness, wid = pairedID, within = c(leaf_age), between = habitat)
+  select(pairedID, leaf_age, habitat, SLA) |>
+  rstatix::anova_test(dv = SLA, wid = pairedID, within = c(leaf_age), between = habitat)
 
 get_anova_table(res.aov)
+
+## Post-hoc for interaction term ----
+# https://www.datanovia.com/en/lessons/repeated-measures-anova-in-r/
+
+one.way.EN.SLA <- durin.plantAvgPair %>%
+  filter(species == "Empetrum nigrum") |>
+  convert_as_factor(leaf_age, habitat) |>
+  select(pairedID, leaf_age, habitat, SLA) |>
+  group_by(habitat) %>%
+  anova_test(dv = SLA, wid = pairedID, within = leaf_age) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+
+pwc2 <- durin.plantAvgPair %>%
+  filter(species == "Empetrum nigrum") |>
+  ungroup() |>
+  convert_as_factor(leaf_age, habitat) |>
+  arrange(pairedID) |>
+  select(leaf_age, habitat, SLA) |>
+  group_by(habitat) |>
+  pairwise_t_test(
+    SLA ~ leaf_age, paired = TRUE,
+    p.adjust.method = "bonferroni"
+  )
+pwc2
+
+one.way.EN.dryMass <- durin.plantAvgPair %>%
+  filter(species == "Empetrum nigrum") |>
+  convert_as_factor(leaf_age, habitat) |>
+  select(pairedID, leaf_age, habitat, dry_mass_g) |>
+  group_by(habitat) %>%
+  anova_test(dv = dry_mass_g, wid = pairedID, within = leaf_age) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+
+one.way.VV.dryMass <- durin.plantAvgPair %>%
+  filter(species == "Vaccinium vitis-idaea") |>
+  convert_as_factor(leaf_age, habitat) |>
+  select(pairedID, leaf_age, habitat, dry_mass_g) |>
+  group_by(habitat) %>%
+  anova_test(dv = dry_mass_g, wid = pairedID, within = leaf_age) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+
+as.data.frame(one.way.EN.SLA) |>
+  bind_rows(as.data.frame(one.way.EN.dryMass), as.data.frame(one.way.VV.dryMass)) |>
+  write.csv("output/2024.04.30_BonferroniTTests.csv")
+
+## Trying again with a different package ----
+## https://stackoverflow.com/questions/72973408/post-hoc-test-in-r-for-repeated-measures-anova-with-2-within-variables
+library(marginaleffects)
+library(afex)
+
+mod <- durin.plantAvgPair %>%
+  filter(species == "Vaccinium vitis-idaea") |>
+  ungroup() |>
+  convert_as_factor(leaf_age, habitat) |>
+  select(pairedID, leaf_age, habitat, dry_mass_g) |>
+  aov_ez(
+  id = "pairedID",
+  dv = "dry_mass_g",
+  within = c("leaf_age"),
+  between = "habitat")
+
+cmp <- comparisons(
+  # the model
+  mod,
+  # hold other regressors at their means if there are any
+  newdata = "mean",
+  # vector of variables we want to "manipulate" in the contrast
+  variables = c("leaf_age", "habitat"),
+  # we care about interactions
+  interactions = TRUE)
+
+summary(cmp)
+
+## Trying a linear model instead ----
+# https://cran.r-project.org/web/packages/afex/vignettes/afex_mixed_example.html
+
+library(ggh4x)
+
+Species = "Empetrum nigrum"
+Trait = "leaf_thickness"
+
+durin_long <- durin |>
+  # Filter to just Sogndal
+  filter(siteID == "Sogndal") |>
+  filter(species %in% c("Empetrum nigrum", "Vaccinium vitis-idaea")) |>
+  mutate(
+    # Temp code to replace missing plot nr
+    DURIN_plot = replace_na(DURIN_plot, "SO_F_EN_1")) |>
+  mutate(pairedID = paste0(DURIN_plot, "_", habitat, "_", "plant", plant_nr)) |>
+  mutate(plantID.unique = paste0(DURIN_plot, "_plant", plant_nr)) |>
+  # Tidy in long form
+  select(pairedID, species, habitat, DURIN_plot, plantID.unique, leaf_age, leaf_thickness_1_mm, leaf_thickness_2_mm, leaf_thickness_3_mm,
+         wet_mass_g:LDMC) |>
+  relocate(c(dry_mass_g, wet_mass_g, leaf_area, SLA, LDMC, leaf_thickness_1_mm:leaf_thickness_3_mm),
+           .after = leaf_age) |>
+  pivot_longer(cols = dry_mass_g:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
+  # Standardize traits
+  mutate(trait = replace(trait,
+                         trait == "leaf_thickness_1_mm" | trait == "leaf_thickness_2_mm" | trait == "leaf_thickness_3_mm",
+                         "leaf_thickness")) |>
+  drop_na(value) |>
+  mutate(logValue = log(value))
+
+ggplot(durin_long, aes(value)) +
+  geom_histogram(bins = 100) +
+  facet_grid2(species ~ trait, scales = "free", independent = "all")
+
+ggplot(durin_long, aes(logValue)) +
+  geom_histogram(bins = 100) +
+  facet_grid2(species ~ trait, scales = "free", independent = "all")
+
+lin.mod = function(Species, Trait){
+data = durin |>
+  # Filter to just Sogndal
+  filter(siteID == "Sogndal") |>
+  mutate(
+    # Temp code to replace missing plot nr
+    DURIN_plot = replace_na(DURIN_plot, "SO_F_EN_1")) |>
+  mutate(pairedID = paste0(DURIN_plot, "_", habitat, "_", "plant", plant_nr)) |>
+  mutate(plantID.unique = paste0(DURIN_plot, "_plant", plant_nr)) |>
+  # Tidy in long form
+  select(pairedID, species, habitat, DURIN_plot, plantID.unique, leaf_age, leaf_thickness_1_mm, leaf_thickness_2_mm, leaf_thickness_3_mm,
+         wet_mass_g:LDMC) |>
+  relocate(c(dry_mass_g, wet_mass_g, leaf_area, SLA, LDMC, leaf_thickness_1_mm:leaf_thickness_3_mm),
+           .after = leaf_age) |>
+  pivot_longer(cols = dry_mass_g:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
+  # Standardize traits
+  mutate(trait = replace(trait,
+                         trait == "leaf_thickness_1_mm" | trait == "leaf_thickness_2_mm" | trait == "leaf_thickness_3_mm",
+                         "leaf_thickness")) |>
+  filter(species %in% c({{ Species }})) |>
+  filter(trait == {{ Trait }}) |>
+  select(habitat, species, leaf_age, pairedID, value)  |>
+  drop_na()
+
+m1s <- mixed(value ~ habitat*leaf_age +
+               (leaf_age|pairedID), data,
+             method = "S")
+
+as.data.frame(summary(m1s)$coefficients) |>
+  mutate(trait = {{ Trait }}) |>
+  rownames_to_column() |>
+  rename(fixedEffect = rowname) |>
+  mutate(fixedEffect = str_remove(fixedEffect, '[:digit:]'))
+}
+
+lm.EN.SLA = lin.mod("Empetrum nigrum", "SLA")
+lm.EN.leafArea = lin.mod("Empetrum nigrum", "leaf_area")
+lm.EN.dryMass = lin.mod("Empetrum nigrum", "dry_mass_g")
+lm.EN.wetMass = lin.mod("Empetrum nigrum", "wet_mass_g")
+lm.EN.LDMC = lin.mod("Empetrum nigrum", "LDMC")
+lm.EN.thickness = lin.mod("Empetrum nigrum", "leaf_thickness")
+
+as.data.frame(lm.EN.SLA) |>
+  bind_rows(lm.EN.leafArea, lm.EN.dryMass, lm.EN.wetMass, lm.EN.LDMC, lm.EN.thickness) |>
+  write.csv("output/2024.05.01_EN.LinMod.csv")
+
+lm.VV.SLA = lin.mod("Vaccinium vitis-idaea", "SLA")
+lm.VV.leafArea = lin.mod("Vaccinium vitis-idaea", "leaf_area")
+lm.VV.dryMass = lin.mod("Vaccinium vitis-idaea", "dry_mass_g")
+lm.VV.wetMass = lin.mod("Vaccinium vitis-idaea", "wet_mass_g")
+lm.VV.LDMC = lin.mod("Vaccinium vitis-idaea", "LDMC")
+lm.VV.thickness = lin.mod("Vaccinium vitis-idaea", "leaf_thickness")
+
+as.data.frame(lm.VV.SLA) |>
+  bind_rows(lm.VV.leafArea, lm.VV.dryMass, lm.VV.wetMass, lm.VV.LDMC, lm.VV.thickness) |>
+  write.csv("output/2024.05.01_VV.LinMod.csv")
 
 # Test form-function relationships ----
 ## Full correlations ----
