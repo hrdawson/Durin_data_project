@@ -84,8 +84,6 @@ LitReview.leaves.traits = LitReview.leaves.all |>
   # Remove tags we're no longer interested in
   filter(!(variable %in% c("C", "N", "language", "Lit", "study", "status"))) |>
   filter(!(value %in% c("BVOC", "iWUE", "leaf nitrogen"))) |>
-  # Filter out recategorized tags
-  filter(!value %in% c("stable isotope", "radioactive isotope")) |>
   # Add in species data
   left_join(LitReview.leaves.speciesList, by = "Key") |>
   # Filter out the wrong species ones
@@ -104,7 +102,9 @@ LitReview.leaves.traits = LitReview.leaves.all |>
          value = str_trim(value),
          variable = str_replace(variable, "EN ", ""),
          variable = str_replace(variable, "VV ", ""),
-         variable = str_trim(variable))
+         variable = str_trim(variable)) |>
+  # Filter out recategorized tags
+  filter(!value %in% c("freeze tolerance", "stable isotope", "radioactive isotope"))
 
 ## Export the useful dataset -----
 write.csv(LitReview.leaves.traits, "clean_data/LitReview_leaves.csv")
@@ -137,7 +137,74 @@ ggplot(LitReview.leaves.tagPercentage,
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
-# Visualize the years of publication
+# Visualize graphs for the paper ----
+library(ochRe)
+## Organise tags ----
+table(LitReview.leaves.tagPercentage$variable)
+table(LitReview.leaves.tagPercentage$value[LitReview.leaves.tagPercentage$variable=="trait type"])
+
+litreview.levels.variable = c("leaf year", "justification", "trait type", "graph", "sampling month", "sampling season",
+                              "habitat type", "trait", "measurement type", "database")
+
+litreview.levels.value = c(
+  # database
+  "EcoFlora", "LEDA", "TRY", "Shidakov2007", "general literature",
+  # database source
+  "single", "multiple",
+  # extractable data
+  "dataset", "points", "means", "median",
+  # graph
+  "years lumped", "years split",
+  # habitat type
+  "open", "forested", "both", "greenhouse",
+  # justification
+  "representation of the plant", "both were present", "testing physiology by age", "appearance", "current leaves too young",
+  "only current leaves available", "missing other cohort", "experimental constraints", "standardization", "data quality",
+  # leaf year
+  "both (concurrent)", "both (mixed)", "both (alternate)", "current", "previous",
+  # location
+  "Austria", "Bosnia and Herzegovina", "Bulgaria", "Canada", "China", "Estonia", "Eurasia", "Finland", "Germany", "Greenland",
+  "Italy", "Japan", "Lithuania", "Mongolia", "Norway", "Poland", "Romania", "Russia", "Scotland", "Serbia", "South Korea",
+  "Sweden", "Turkey", "Ukraine", "USA",
+  # measurement type
+  "actual", "database",
+  # sampling month
+  "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",
+  # sampling season
+  "end of overwintering", "before new growth", "before flowering", "spring", "spring recovery of photosynthesis", "early growing season",
+  "rapid growth period", "summer", "mid growing season", "growing season", "peak growing season", "fully expanded", "peak aboveground biomass",
+  "leaf maturity", "maximum shoot length", "peak leaf thickness", "autumn", "peak ripeness", "late growing season", "before snowfall",
+  "winter", "maximum snow depth",
+  # trait
+  "leaf area", "leaf mass", "LMA", "SLA", "leaf thickness", "LDMC", "leaf shape",
+  # trait type
+  "chemical compound", "isotopic", "microscopic morphology", "morphological", "NDVI", "pH", "photosynthetic (chemical)",
+  "photosynthetic (electrical)", "photosynthetic (flux)", "photosynthetic (radioactive labeling)", "physiological", "spectroscopy",
+  "stoichiometric",
+  # catch alls
+  "no", "none", "unspecified"
+)
+
+## Fig. 4: Key variables for all trait studies ----
+tagVariables.allTraitKey = c("leaf year", "justification", "trait type")
+
+ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.allTraitKey) |>
+         mutate(value = factor(value, levels = litreview.levels.value),
+                variable = factor(variable, levels = litreview.levels.variable)),
+       aes(x = species, y = percent, fill = value)) +
+  geom_bar(position="fill", stat="identity", color = "black") +
+  geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.7)) +
+  geom_text(aes(label = n), size = 3, position = position_stack(vjust = 0.3)) +
+  facet_grid(~variable) +
+  labs(x = "", y = "Percent of studies") +
+  scale_fill_ochre("olsen_sea", direction = -1) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
+
+ggsave("visualizations/2024.05.01_LitReview_AnalysisAllTraits_KeyVariables.png", width = 10, height = 8, units = "in")
+
+# Visualize the years of publication ----
 LitReview.years = LitReview.leaves.traits |>
   select(Key, Publication.Year, species) |>
   distinct()
