@@ -137,6 +137,16 @@ ggplot(LitReview.leaves.tagPercentage,
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
+# Visualize the years of publication
+LitReview.years = LitReview.leaves.traits |>
+  select(Key, Publication.Year, species) |>
+  distinct()
+
+ggplot(LitReview.years, aes(x = Publication.Year, fill = species)) +
+  geom_histogram(position = "dodge", binwidth = 1) +
+  scale_y_continuous(breaks= scales::pretty_breaks()) +
+  theme_bw()
+
 # Data cleaning -----
 ## List all the tags that all studies should have
 tags.allTraits = data.frame(variable = c("leaf year", "sampling month", "sampling season", "trait type", "location"))
