@@ -217,6 +217,41 @@ ggplot(durin.traitAvg,
 ggsave("visualizations/2024.04.23_TraitDensity_Independent.png", width = 12, height = 8, units = "in")
 
 
+## Comparing ages between species ----
+durin.leafAge.avg = DURIN.lit |>
+  # Filter to correct obs
+  filter(dataset == "DURIN") |>
+  filter(trait %in% c("SLA (cm^2/g)", "LDMC (mg/g)")) |>
+  group_by(trait, species, leaf_age) |>
+  get_summary_stats(type = "mean_sd")
+
+ggplot(DURIN.lit |> filter(dataset == "DURIN") |> filter(leaf_age %in% c("current", "previous")) |>
+         filter(trait %in% c("SLA (cm^2/g)", "LDMC (mg/g)")),
+       aes(x = interaction(leaf_age, species), y=value,
+           fill=interaction(leaf_age, species), colour=interaction(leaf_age, species), linetype = leaf_age)) +
+  geom_boxplot(outlier.shape=NA, alpha = 0.5) +
+  geom_point(position = position_jitterdodge()) +
+  scale_fill_manual(values = c("skyblue3", "midnightblue", "indianred", "firebrick4")) +
+  scale_colour_manual(values = c("skyblue3", "midnightblue", "indianred", "firebrick4")) +
+  scale_linetype_manual(values = c("dotted", "solid")) +
+  # scale_y_continuous(position = "left") +
+  # scale_y_log10() +
+  facet_nested( ~ trait, scales = "free", independent = "all",
+               nest_line = element_line(linetype = 2)) +
+  labs(x="", y= "Trait value") +
+  scale_x_discrete(guide = "axis_nested") +
+  theme_bw() +
+  theme(
+    legend.position="none",
+    # strip.text.x = element_blank(),
+    strip.background = element_blank(),
+    ggh4x.facet.nestline = element_line(colour = "black"),
+    # axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
+    text=element_text(size=11)
+  )
+
+ggsave("visualizations/2024.04.24_InterspecificTraits.png", width = 6, height = 4, units = "in")
+
 # Ridgeplot version
 ggplot(durin.traitAvg, aes(x=mean, y = group, fill=group, linetype = group)) +
   geom_density_ridges(alpha=0.5, linewidth = 0.6, scale = 2.5) +
