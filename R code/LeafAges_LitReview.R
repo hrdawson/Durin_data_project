@@ -125,6 +125,24 @@ LitReview.leaves.tagPercentage = LitReview.leaves.tagCount |>
   left_join(LitReview.leaves.totals) |>
   mutate(percent = round((n/total), 2))
 
+# Summarise tags for morpho studies ----
+LitReview.leaves.tagCount.morpho = LitReview.leaves.traits |>
+  filter(Key %in% LitReview.leaves.morphoList) |>
+  # Group and count
+  group_by(species, variable, value) |>
+  summarize(n = length(Key)) |>
+  ungroup()
+
+LitReview.leaves.totals.morpho = LitReview.leaves.traits |>
+  filter(Key %in% LitReview.leaves.morphoList) |>
+  group_by(species, variable) |>
+  summarize(total = length(Key)) |>
+  ungroup()
+
+LitReview.leaves.tagPercentage.morpho = LitReview.leaves.tagCount.morpho |>
+  left_join(LitReview.leaves.totals.morpho) |>
+  mutate(percent = round((n/total), 2))
+
 # Visualize all the tags (messy!)----
 ggplot(LitReview.leaves.tagPercentage,
        aes(x = species, y = percent, fill = value)) +
@@ -141,7 +159,7 @@ ggplot(LitReview.leaves.tagPercentage,
 library(ochRe)
 ## Organise tags ----
 table(LitReview.leaves.tagPercentage$variable)
-table(LitReview.leaves.tagPercentage$value[LitReview.leaves.tagPercentage$variable=="trait type"])
+table(LitReview.leaves.tagPercentage$value[LitReview.leaves.tagPercentage$variable=="sampling season"])
 
 litreview.levels.variable = c("leaf year", "justification", "trait type", "graph", "sampling month", "sampling season",
                               "habitat type", "trait", "measurement type", "database")
@@ -173,7 +191,7 @@ litreview.levels.value = c(
   # sampling season
   "end of overwintering", "before new growth", "before flowering", "spring", "spring recovery of photosynthesis", "early growing season",
   "rapid growth period", "summer", "mid growing season", "growing season", "peak growing season", "fully expanded", "peak aboveground biomass",
-  "leaf maturity", "maximum shoot length", "peak leaf thickness", "autumn", "peak ripeness", "late growing season", "before snowfall",
+  "leaf maturity", "maximum shoot length", "peak leaf thickness", "late summer", "autumn", "peak ripeness", "late growing season", "before snowfall",
   "winter", "maximum snow depth",
   # trait
   "leaf area", "leaf mass", "LMA", "SLA", "leaf thickness", "LDMC", "leaf shape",
@@ -197,12 +215,50 @@ ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.allTr
   geom_text(aes(label = n), size = 3, position = position_stack(vjust = 0.3)) +
   facet_grid(~variable) +
   labs(x = "", y = "Percent of studies") +
-  scale_fill_ochre("olsen_sea", direction = -1) +
+  scale_fill_ochre(palette = "olsen_qual", reverse = FALSE) +
   theme_bw() +
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
 ggsave("visualizations/2024.05.01_LitReview_AnalysisAllTraits_KeyVariables.png", width = 10, height = 8, units = "in")
+
+## Fig. S2: Additional variables for all trait studies ----
+tagVariables.addTraitKey = c("graph", "sampling month", "sampling season")
+
+ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.addTraitKey) |>
+         mutate(value = factor(value, levels = litreview.levels.value),
+                variable = factor(variable, levels = litreview.levels.variable)),
+       aes(x = species, y = percent, fill = value)) +
+  geom_bar(position="fill", stat="identity", color = "black") +
+  geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.7)) +
+  geom_text(aes(label = n), size = 3, position = position_stack(vjust = 0.3)) +
+  facet_grid(~variable) +
+  labs(x = "", y = "Percent of studies") +
+  scale_fill_ochre(palette = "olsen_qual", reverse = FALSE) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
+
+ggsave("visualizations/2024.05.02_LitReview_AnalysisAddTraits_KeyVariables.png", width = 10, height = 8, units = "in")
+
+## Fig. S4: Morpho trait studies ----
+tagVariables.morphoKey = c("leaf year", "sampling month", "sampling season", "habitat type", "trait", "measurement type", "database")
+
+ggplot(LitReview.leaves.tagPercentage.morpho |> filter(variable %in% tagVariables.morphoKey) |>
+         mutate(value = factor(value, levels = litreview.levels.value),
+                variable = factor(variable, levels = litreview.levels.variable)),
+       aes(x = species, y = percent, fill = value)) +
+  geom_bar(position="fill", stat="identity", color = "black") +
+  geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.7)) +
+  geom_text(aes(label = n), size = 3, position = position_stack(vjust = 0.3)) +
+  facet_grid(~variable) +
+  labs(x = "", y = "Percent of studies") +
+  scale_fill_ochre(palette = "olsen_qual", reverse = FALSE) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
+
+ggsave("visualizations/2024.05.02_LitReview_AnalysisAddTraits_KeyVariables.png", width = 10, height = 8, units = "in")
 
 # Visualize the years of publication ----
 LitReview.years = LitReview.leaves.traits |>
