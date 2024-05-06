@@ -25,7 +25,7 @@ trait.avg = function(data, leaf.age) {
   select(species, habitat, DURIN_plot, plantID.unique, leaf_age, leaf_thickness_1_mm, leaf_thickness_2_mm, leaf_thickness_3_mm,
          wet_mass_g:LDMC) |>
   relocate(c(dry_mass_g, wet_mass_g, leaf_area, SLA, LDMC, leaf_thickness_1_mm:leaf_thickness_3_mm),
-           .after = leaf_age)
+           .after = leaf_age) |>
   pivot_longer(cols = dry_mass_g:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
   # Standardize traits
   mutate(trait = replace(trait,
