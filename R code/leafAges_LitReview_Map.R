@@ -27,10 +27,10 @@ LitReview.map <- left_join(LitReview.leaves.countryCount, world_map, by = "regio
 ggplot(LitReview.map, aes(long, lat, group = group))+
   geom_polygon(inherit.aes = FALSE, data = world_map, aes(long, lat, group = group), fill = "grey80") +
   geom_polygon(aes(fill = studies ))+
-  facet_grid(~species) +
+  facet_grid(species~.) +
   scale_fill_viridis(option = "G", direction = -1) +
   labs(x = "", y = "") +
   theme_minimal()
 
-ggsave("visualizations/2024.04.12_LitReview_StudyLocationMap.png", width = 7, height = 2, units = "in")
+ggsave("visualizations/2024.04.12_LitReview_StudyLocationMap.png", width = 5, height = 5, units = "in")
 
