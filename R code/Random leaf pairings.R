@@ -4,6 +4,8 @@ set.seed(2023)
 durin.random = durin |>
   # Filter to only DURIN plots
   drop_na(DURIN_plot) |>
+  # Filter to just Sogndal
+  filter(siteID == "Sogndal") |>
   # Filter to just my species
   filter(species %in% c("Empetrum nigrum", "Vaccinium vitis-idaea")) |>
   # Add random row numbers for sorting
@@ -20,7 +22,7 @@ durin.random = durin |>
   # Tidy in long form
   relocate(c(dry_mass_g, wet_mass_g, leaf_area, SLA, LDMC, leaf_thickness_1_mm:leaf_thickness_3_mm),
            .after = leaf_nr) |>
-  pivot_longer(cols = dry_mass_g:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
+  pivot_longer(cols = dry_mass_g:leaf_thickness_3_mm, names_to = "trait", values_to = "value_old") |>
   # Standardize traits
   mutate(trait = replace(trait,
                          trait == "leaf_thickness_1_mm" | trait == "leaf_thickness_2_mm" | trait == "leaf_thickness_3_mm",
@@ -28,17 +30,25 @@ durin.random = durin |>
   filter(!trait %in% c("bulk_nr_leaves_clean", "plant_height")) |>
   # replace outliers with NA
   mutate(value = case_when(
-    trait == "SLA" & value > 400 ~ NA,
-    trait == "wet_mass_g" & species == "Empetrum nigrum" & value > 0.005 ~ NA,
-    trait == "dry_mass_g" & species == "Empetrum nigrum" & value > 0.0025 ~ NA,
-    trait == "LDMC" & value > 600 ~ NA,
-    TRUE ~ value
+    trait == "SLA" & value_old > 400 ~ NA,
+    trait == "wet_mass_g" & species == "Empetrum nigrum" & value_old > 0.005 ~ NA,
+    trait == "dry_mass_g" & species == "Empetrum nigrum" & value_old > 0.0025 ~ NA,
+    trait == "LDMC" & value_old > 600 ~ NA,
+    TRUE ~ value_old
   )) |>
   # Remove extraneous columns
   select(-c(bulk_nr_leaves_original, wet_mass_g_original, dry_mass_g_original, bulk_nr_leaves_scanned,
             leaf_area_original, priority, bulk_nr_leaves)) |>
+  distinct() |>
+  ungroup()
+
+durin.checkPairs = durin.random |>
+  select(plantID.unique, pairedID, leaf_age, plant_nr, leaf_nr, envelope_ID) |>
   distinct()
 
+durin.checkOutliers = durin.random |>
+  filter(is.na(value)) |>
+  select(plantID.unique, envelope_ID, species, trait, value_old, value, remark, remark_dry_weighing)
 
 # Calculate correlation directions
 durin.random.corr.notthick = durin.random |>
@@ -100,10 +110,10 @@ durin.random.corr = durin.random |>
   # Factor leaf age levels
   mutate(leaf_age = factor(leaf_age, levels = c("young", "old", "unspecified"),
                            labels = c("current", "previous", "unspecified")),
-         trait = factor(trait, levels = c( "SLA", "leaf_area", "dry_mass_g", "wet_mass_g",
-                                           "LDMC", "leaf_thickness"),
-                        labels = c("SLA (cm^2/g)", "Leaf area (cm^2)", "Dry mass (g)",
-                                   "Wet mass (g)","LDMC (mg/g)", "Leaf thickness (mm)")))
+         trait = factor(trait, levels = c("SLA", "LDMC", "leaf_area", "dry_mass_g", "wet_mass_g",
+                                           "leaf_thickness"),
+                        labels = c("SLA (cm^2/g)", "LDMC (mg/g)", "Leaf area (cm^2)", "Dry mass (g)",
+                                   "Wet mass (g)", "Leaf thickness (mm)")))
 
 # write.csv(durin.random.corr |> filter(siteID == "Sogndal"), "output/2024.04.12_Dawson_DURINLeafPairs.csv")
 
@@ -130,14 +140,14 @@ ggplot(durin.random.corr, aes(x = leaf_age, y = value)) +
 # ggsave("visualizations/2023.10.17_AgePaired.png", width = 14, height = 10, units = "in")
 
 # Sogndal only
-ggplot(durin.random.corr |> filter(siteID == "Sogndal"),
+ggplot(durin.random.corr |> filter(siteID == "Sogndal") |> drop_na(value) |> filter(!trait %in% c("Wet mass (g)")),
        aes(x = interaction(leaf_age, habitat), y = value)) +
   geom_line(aes(group=pairedID, color = corr), alpha = 0.3) +
   scale_color_manual(values = c("blue", "red", "grey")) +
   geom_point(aes(fill=leaf_age, group=pairedID)) +
   geom_boxplot(alpha = 0.5, fill = "grey90") +
   scale_x_discrete(guide = "axis_nested") +
-  facet_nested(species ~ trait, scales = "free", independent = "y",
+  facet_nested(trait ~ species, scales = "free", independent = "y",
                nest_line = element_line(linetype = 2)) +
   labs(x = "Leaf year") +
   theme_bw(base_size = 14) +
