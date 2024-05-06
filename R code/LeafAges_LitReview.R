@@ -261,7 +261,7 @@ ggplot(LitReview.leaves.tagPercentage.morpho |> filter(variable %in% tagVariable
 ggsave("visualizations/2024.05.02_LitReview_AnalysisAddTraits_KeyVariables.png", width = 10, height = 8, units = "in")
 
 # Try bar chart alternatives ----
-## Fig. S4: Morpho trait studies ----
+## Shifted baseline ----
 library(ggrepel)
 
 LitReview.leaves.tagPercentage.morpho.neg = LitReview.leaves.tagPercentage.morpho |>
@@ -285,6 +285,19 @@ ggplot(LitReview.leaves.tagPercentage.morpho.neg |> filter(variable %in% tagVari
   theme_bw() +
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
+
+## Piecharts ----
+library(plotly)
+
+LitReview.leaves.tagPercentage.morpho %>%
+  group_by(species) %>%
+do(p=plot_ly(., labels = ~value, values = ~percent, type = 'pie',
+             textposition = 'outside',textinfo = 'label+percent')) %>%
+  subplot(nrows = 1, shareX = TRUE, shareY = TRUE)
+
+  layout(title = 'Letters',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
 
 # Visualize the years of publication ----
 LitReview.years = LitReview.leaves.traits |>
