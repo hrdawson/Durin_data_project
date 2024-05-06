@@ -260,6 +260,32 @@ ggplot(LitReview.leaves.tagPercentage.morpho |> filter(variable %in% tagVariable
 
 ggsave("visualizations/2024.05.02_LitReview_AnalysisAddTraits_KeyVariables.png", width = 10, height = 8, units = "in")
 
+# Try bar chart alternatives ----
+## Fig. S4: Morpho trait studies ----
+library(ggrepel)
+
+LitReview.leaves.tagPercentage.morpho.neg = LitReview.leaves.tagPercentage.morpho |>
+  mutate(percent = case_when(
+    value %in% c("unspecified", "none", "no") ~ percent * -1,
+    TRUE ~ percent
+  ))
+
+ggplot(LitReview.leaves.tagPercentage.morpho.neg |> filter(variable %in% tagVariables.morphoKey) |>
+         mutate(value = factor(value, levels = litreview.levels.value),
+                variable = factor(variable, levels = litreview.levels.variable)),
+       aes(x = species, y = percent, fill = value)) +
+  geom_col() +
+  # geom_bar(position="fill", stat="identity", color = "black") +
+  geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.7)) +
+  geom_text(aes(label = n), size = 3, position = position_stack(vjust = 0.3)) +
+  geom_hline(yintercept = 0) +
+  facet_grid2(~variable, scales = "free_y", independent = "y") +
+  labs(x = "", y = "Percent of studies") +
+  scale_fill_ochre(palette = "olsen_qual", reverse = TRUE) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
+
 # Visualize the years of publication ----
 LitReview.years = LitReview.leaves.traits |>
   select(Key, Publication.Year, species) |>
