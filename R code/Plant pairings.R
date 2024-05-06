@@ -173,9 +173,6 @@ summary(cmp)
 
 library(ggh4x)
 
-Species = "Empetrum nigrum"
-Trait = "leaf_thickness"
-
 durin_long <- durin |>
   # Filter to just Sogndal
   filter(siteID == "Sogndal") |>
@@ -206,6 +203,9 @@ ggplot(durin_long, aes(logValue)) +
   geom_histogram(bins = 100) +
   facet_grid2(species ~ trait, scales = "free", independent = "all")
 
+Species = "Empetrum nigrum"
+Trait = "leaf_thickness"
+
 lin.mod = function(Species, Trait){
 data = durin |>
   # Filter to just Sogndal
@@ -225,6 +225,15 @@ data = durin |>
   mutate(trait = replace(trait,
                          trait == "leaf_thickness_1_mm" | trait == "leaf_thickness_2_mm" | trait == "leaf_thickness_3_mm",
                          "leaf_thickness")) |>
+  # replace outliers with NA
+  mutate(value = case_when(
+    trait == "SLA" & value > 400 ~ NA,
+    trait == "wet_mass_g" & species == "Empetrum nigrum" & value > 0.005 ~ NA,
+    trait == "dry_mass_g" & species == "Empetrum nigrum" & value > 0.0025 ~ NA,
+    trait == "LDMC" & value > 600 ~ NA,
+    TRUE ~ value
+  )) |>
+  # Filter data
   filter(species %in% c({{ Species }})) |>
   filter(trait == {{ Trait }}) |>
   select(habitat, species, leaf_age, pairedID, value)  |>
