@@ -272,6 +272,92 @@ as.data.frame(lm.VV.SLA) |>
   bind_rows(lm.VV.leafArea, lm.VV.dryMass, lm.VV.wetMass, lm.VV.LDMC, lm.VV.thickness) |>
   write.csv("output/2024.05.01_VV.LinMod.csv")
 
+## Compare means ----
+trait.summary.leafAge = durin |>
+  # Filter to just Sogndal
+  filter(siteID == "Sogndal") |>
+  filter(species %in% c("Empetrum nigrum", "Vaccinium vitis-idaea")) |>
+  mutate(
+    # Temp code to replace missing plot nr
+    DURIN_plot = replace_na(DURIN_plot, "SO_F_EN_1")) |>
+  mutate(pairedID = paste0(DURIN_plot, "_", habitat, "_", "plant", plant_nr)) |>
+  mutate(plantID.unique = paste0(DURIN_plot, "_plant", plant_nr)) |>
+  # Tidy in long form
+  select(pairedID, species, habitat, DURIN_plot, plantID.unique, leaf_age, leaf_thickness_1_mm, leaf_thickness_2_mm, leaf_thickness_3_mm,
+         wet_mass_g:LDMC) |>
+  relocate(c(dry_mass_g, wet_mass_g, leaf_area, SLA, LDMC, leaf_thickness_1_mm:leaf_thickness_3_mm),
+           .after = leaf_age) |>
+  pivot_longer(cols = dry_mass_g:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
+  # Standardize traits
+  mutate(trait = replace(trait,
+                         trait == "leaf_thickness_1_mm" | trait == "leaf_thickness_2_mm" | trait == "leaf_thickness_3_mm",
+                         "leaf_thickness")) |>
+  # replace outliers with NA
+  mutate(value = case_when(
+    trait == "SLA" & value > 400 ~ NA,
+    trait == "wet_mass_g" & species == "Empetrum nigrum" & value > 0.005 ~ NA,
+    trait == "dry_mass_g" & species == "Empetrum nigrum" & value > 0.0025 ~ NA,
+    trait == "LDMC" & value > 600 ~ NA,
+    TRUE ~ value
+  )) |>
+  # Filter data
+  # Filter data
+  drop_na() |>
+  filter(trait != "wet_mass_g") |>
+  # Summarize
+  group_by(trait, species, leaf_age) |>
+  summarize(mean = mean(value)) |>
+  mutate(mean = case_when(
+    species == "Vaccinium vitis-idaea" & trait %in% c("leaf_area") ~ NA,
+    TRUE ~ mean
+  )) |>
+  pivot_wider(names_from = leaf_age, values_from = mean)|>
+  mutate(diff = young-old,
+         percent = diff/old*100)
+
+trait.summary.habitat = durin |>
+  # Filter to just Sogndal
+  filter(siteID == "Sogndal") |>
+  filter(species %in% c("Empetrum nigrum", "Vaccinium vitis-idaea")) |>
+  mutate(
+    # Temp code to replace missing plot nr
+    DURIN_plot = replace_na(DURIN_plot, "SO_F_EN_1")) |>
+  mutate(pairedID = paste0(DURIN_plot, "_", habitat, "_", "plant", plant_nr)) |>
+  mutate(plantID.unique = paste0(DURIN_plot, "_plant", plant_nr)) |>
+  # Tidy in long form
+  select(pairedID, species, habitat, DURIN_plot, plantID.unique, leaf_age, leaf_thickness_1_mm, leaf_thickness_2_mm, leaf_thickness_3_mm,
+         wet_mass_g:LDMC) |>
+  relocate(c(dry_mass_g, wet_mass_g, leaf_area, SLA, LDMC, leaf_thickness_1_mm:leaf_thickness_3_mm),
+           .after = leaf_age) |>
+  pivot_longer(cols = dry_mass_g:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
+  # Standardize traits
+  mutate(trait = replace(trait,
+                         trait == "leaf_thickness_1_mm" | trait == "leaf_thickness_2_mm" | trait == "leaf_thickness_3_mm",
+                         "leaf_thickness")) |>
+  # replace outliers with NA
+  mutate(value = case_when(
+    trait == "SLA" & value > 400 ~ NA,
+    trait == "wet_mass_g" & species == "Empetrum nigrum" & value > 0.005 ~ NA,
+    trait == "dry_mass_g" & species == "Empetrum nigrum" & value > 0.0025 ~ NA,
+    trait == "LDMC" & value > 600 ~ NA,
+    TRUE ~ value
+  )) |>
+  # Filter data
+  drop_na() |>
+  filter(trait != "wet_mass_g") |>
+  # Summarize
+  group_by(trait, species, habitat) |>
+  summarize(mean = mean(value)) |>
+  mutate(mean = case_when(
+    species == "Vaccinium vitis-idaea" & trait %in% c("SLA", "LDMC", "leaf_thickness") ~ NA,
+    TRUE ~ mean
+  )) |>
+  drop_na() |>
+  pivot_wider(names_from = habitat, values_from = mean) |>
+  mutate(diff = Forested-Open,
+         percent = diff/Forested *100)
+
+
 # Test form-function relationships ----
 ## Full correlations ----
 library(GGally)
