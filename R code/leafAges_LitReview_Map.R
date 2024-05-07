@@ -32,5 +32,5 @@ ggplot(LitReview.map, aes(long, lat, group = group))+
   labs(x = "", y = "") +
   theme_minimal()
 
-ggsave("visualizations/2024.04.12_LitReview_StudyLocationMap.png", width = 5, height = 5, units = "in")
+ggsave("visualizations/2024.05.07_LitReview_StudyLocationMap.png", width = 5, height = 5, units = "in")
 
