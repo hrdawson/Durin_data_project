@@ -223,7 +223,7 @@ ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.allTr
 ggsave("visualizations/2024.05.01_LitReview_AnalysisAllTraits_KeyVariables.png", width = 10, height = 8, units = "in")
 
 ## Fig. S2: Additional variables for all trait studies ----
-tagVariables.addTraitKey = c("graph", "sampling month", "sampling season")
+tagVariables.addTraitKey = c("trait type", "graph", "sampling month", "sampling season")
 
 ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.addTraitKey) |>
          mutate(value = factor(value, levels = litreview.levels.value),
