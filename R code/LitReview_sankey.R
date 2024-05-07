@@ -1,7 +1,7 @@
 # devtools::install_github("davidsjoberg/ggsankey")
 library(ggsankey)
 
-LitReview.sankey.morpho = LitReview.leaves.traits |>
+LitReview.sankey = LitReview.leaves.traits |>
   # Temp filtering while dealing with the main fig
   filter(variable %in% c("leaf year", "justification")) |>
   # Select only needed columns
@@ -22,7 +22,7 @@ LitReview.sankey.morpho = LitReview.leaves.traits |>
                                                          "only current leaves available", "missing other cohort",
                                                          "experimental constraints", "standardization", "data quality", "none", "unspecified")))
 
-LitReview.sankey.VV = LitReview.sankey.morpho |>
+LitReview.sankey.VV = LitReview.sankey |>
   filter(species == "Vaccinium vitis-idaea") |>
   make_long(justification, leaf_year) |>
   mutate(species = "Vaccinium vitis-idaea")
@@ -41,7 +41,7 @@ ggplot(LitReview.sankey.VV, aes(x = x, next_x = next_x, node = node, next_node =
         axis.text.y=element_blank(),
         axis.ticks.y=element_blank())
 
-LitReview.sankey.EN = LitReview.sankey.morpho |>
+LitReview.sankey.EN = LitReview.sankey |>
   filter(species == "Empetrum nigrum") |>
   make_long(leaf_year, justification) |>
   mutate(species = "Empetrum nigrum")
