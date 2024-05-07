@@ -174,7 +174,7 @@ litreview.levels.value = c(
   # graph
   "years lumped", "years split",
   # habitat type
-  "open", "forested", "both", "greenhouse",
+  "open", "forested", "both", "common garden", "greenhouse",
   # justification
   "representation of the plant", "both were present", "testing physiology by age", "appearance", "current leaves too young",
   "only current leaves available", "missing other cohort", "experimental constraints", "standardization", "data quality",
@@ -223,7 +223,7 @@ ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.allTr
 ggsave("visualizations/2024.05.01_LitReview_AnalysisAllTraits_KeyVariables.png", width = 10, height = 8, units = "in")
 
 ## Fig. S2: Additional variables for all trait studies ----
-tagVariables.addTraitKey = c("trait type", "graph", "sampling month", "sampling season")
+tagVariables.addTraitKey = c("trait type", "habitat type", "graph", "sampling month", "sampling season")
 
 ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.addTraitKey) |>
          mutate(value = factor(value, levels = litreview.levels.value),
@@ -258,7 +258,7 @@ ggplot(LitReview.leaves.tagPercentage.morpho |> filter(variable %in% tagVariable
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
-ggsave("visualizations/2024.05.02_LitReview_AnalysisAddTraits_KeyVariables.png", width = 10, height = 8, units = "in")
+ggsave("visualizations/2024.05.02_LitReview_AnalysisMorphoTraits_KeyVariables.png", width = 10, height = 8, units = "in")
 
 # Try bar chart alternatives ----
 ## Shifted baseline ----
@@ -311,7 +311,7 @@ ggplot(LitReview.years, aes(x = Publication.Year, fill = species)) +
 
 # Data cleaning -----
 ## List all the tags that all studies should have
-tags.allTraits = data.frame(variable = c("leaf year", "sampling month", "sampling season", "trait type", "location"))
+tags.allTraits = data.frame(variable = c("leaf year", "sampling month", "sampling season", "trait type", "location", "habitat type"))
 
 tags.morpho = data.frame(variable = c(
   "measurement type",
