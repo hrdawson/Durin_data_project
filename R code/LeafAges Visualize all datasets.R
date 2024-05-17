@@ -78,6 +78,10 @@ DURIN.lit.sources = DURIN.lit |>
   summarize(n = length(value), .by = c(dataset, database, source)) |>
   mutate(percent = n/sum(n))
 
+# Count DURIN measurements
+DURIN.ct.leaves = leaf.ages |>
+  select(envelope_ID) |>
+  distinct()
 
 # Visualize ----
 library(ggh4x)
