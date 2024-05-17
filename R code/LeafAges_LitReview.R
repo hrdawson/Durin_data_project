@@ -224,23 +224,45 @@ ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.allTr
 ggsave("visualizations/2024.05.01_LitReview_AnalysisAllTraits_KeyVariables.png", width = 10, height = 8, units = "in")
 
 ## Fig. S2: Additional variables for all trait studies ----
-tagVariables.addTraitKey = c("trait type", "habitat type", "graph", "sampling month", "sampling season")
+tagVariables.addTraitKey.smBox = c("habitat type", "graph")
+tagVariables.addTraitKey.lgBox = c("trait type", "sampling month", "sampling season")
 
-ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.addTraitKey) |>
+FigS2.smBox =
+ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.addTraitKey.smBox) |>
          mutate(value = factor(value, levels = litreview.levels.value),
                 variable = factor(variable, levels = litreview.levels.variable)),
        aes(x = species, y = percent, fill = value)) +
   geom_bar(position="fill", stat="identity", color = "black") +
-  geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.7)) +
-  geom_text(aes(label = paste("(",n, ")", sep = "")), size = 3, position = position_stack(vjust = 0.3)) +
+  geom_text(aes(label = paste(value, " (", n, ")", sep = ""), lineheight = .75),
+            size = 2, position = position_fill(vjust = 0.5), vjust = 0.3) +
   facet_grid(~variable) +
   labs(x = "", y = "Percent of studies") +
-  scale_fill_ochre(palette = "olsen_qual", reverse = FALSE) +
+  scale_fill_viridis_d(alpha = 0.5, direction = -1) +
+  scale_y_continuous(expand = c(0.001, 0.02)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
   theme_bw() +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
+  theme(legend.position = "none")
 
-ggsave("visualizations/2024.05.17_LitReview_AnalysisAddTraits_KeyVariables.png", width = 20, height = 20, units = "in")
+FigS2.lgBox =
+  ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.addTraitKey.lgBox) |>
+           mutate(value = factor(value, levels = litreview.levels.value),
+                  variable = factor(variable, levels = litreview.levels.variable)),
+         aes(x = species, y = percent, fill = value)) +
+  geom_bar(position="fill", stat="identity", color = "black") +
+    geom_text(aes(label = paste(value, " (", n, ")", sep = ""), lineheight = .75),
+              size = 2, position = position_fill(vjust = 0.5), vjust = 0.3) +
+  facet_grid(~variable) +
+  labs(x = "", y = "Percent of studies") +
+  scale_fill_viridis_d(alpha = 0.5, direction = -1) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+FigS2.lgBox + FigS2.smBox +
+  plot_layout(ncol = 1, heights = c(4,1))
+
+ggsave("visualizations/2024.05.17_LitReview_AnalysisAddTraits_KeyVariables.png", width = 8, height = 12, units = "in")
 
 ## Fig. S4: Morpho trait studies ----
 tagVariables.morphoKey.smBox = c("leaf year", "habitat type", "trait", "measurement type", "database")
@@ -256,7 +278,7 @@ ggplot(LitReview.leaves.tagPercentage.morpho |> filter(variable %in% tagVariable
   facet_wrap(~variable, nrow = 3, ncol = 2) +
   labs(x = "", y = "Percent of studies") +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
-  scale_fill_ochre(palette = "olsen_qual", reverse = FALSE) +
+  scale_fill_viridis_d(alpha = 0.5, direction = -1) +
   theme_bw() +
   theme(legend.position = "none")
 
@@ -271,7 +293,7 @@ FigS4.lgBox =
   facet_wrap(~variable, ncol = 2) +
   labs(x = "", y = "Percent of studies") +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
-  scale_fill_ochre(palette = "olsen_qual", reverse = FALSE) +
+  scale_fill_viridis_d(alpha = 0.5, direction = -1) +
   theme_bw() +
   theme(legend.position = "none")
 
