@@ -123,7 +123,8 @@ LitReview.leaves.totals = LitReview.leaves.traits |>
 
 LitReview.leaves.tagPercentage = LitReview.leaves.tagCount |>
   left_join(LitReview.leaves.totals) |>
-  mutate(percent = round((n/total), 2))
+  mutate(percent = round((n/total), 2),
+         )
 
 # Summarise tags for morpho studies ----
 LitReview.leaves.tagCount.morpho = LitReview.leaves.traits |>
@@ -231,7 +232,7 @@ ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.addTr
        aes(x = species, y = percent, fill = value)) +
   geom_bar(position="fill", stat="identity", color = "black") +
   geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.7)) +
-  geom_text(aes(label = n), size = 3, position = position_stack(vjust = 0.3)) +
+  geom_text(aes(label = paste("(",n, ")", sep = "")), size = 3, position = position_stack(vjust = 0.3)) +
   facet_grid(~variable) +
   labs(x = "", y = "Percent of studies") +
   scale_fill_ochre(palette = "olsen_qual", reverse = FALSE) +
@@ -239,26 +240,44 @@ ggplot(LitReview.leaves.tagPercentage |> filter(variable %in% tagVariables.addTr
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
 
-ggsave("visualizations/2024.05.02_LitReview_AnalysisAddTraits_KeyVariables.png", width = 10, height = 8, units = "in")
+ggsave("visualizations/2024.05.17_LitReview_AnalysisAddTraits_KeyVariables.png", width = 20, height = 20, units = "in")
 
 ## Fig. S4: Morpho trait studies ----
-tagVariables.morphoKey = c("leaf year", "sampling month", "sampling season", "habitat type", "trait", "measurement type", "database")
+tagVariables.morphoKey.smBox = c("leaf year", "habitat type", "trait", "measurement type", "database")
+tagVariables.morphoKey.lgBox = c("sampling month", "sampling season")
 
-ggplot(LitReview.leaves.tagPercentage.morpho |> filter(variable %in% tagVariables.morphoKey) |>
+FigS4.smBox =
+ggplot(LitReview.leaves.tagPercentage.morpho |> filter(variable %in% tagVariables.morphoKey.smBox) |>
          mutate(value = factor(value, levels = litreview.levels.value),
                 variable = factor(variable, levels = litreview.levels.variable)),
        aes(x = species, y = percent, fill = value)) +
   geom_bar(position="fill", stat="identity", color = "black") +
-  geom_text(aes(label = value), size = 3, position = position_stack(vjust = 0.7)) +
-  geom_text(aes(label = n), size = 3, position = position_stack(vjust = 0.3)) +
-  facet_grid(~variable) +
+  geom_text(aes(label = paste(value, " (", n, ")", sep = "")), size = 2.5, position = position_stack(vjust = 0.5)) +
+  facet_wrap(~variable, nrow = 3, ncol = 2) +
   labs(x = "", y = "Percent of studies") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
   scale_fill_ochre(palette = "olsen_qual", reverse = FALSE) +
   theme_bw() +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45,vjust = 1, hjust=1))
+  theme(legend.position = "none")
 
-ggsave("visualizations/2024.05.02_LitReview_AnalysisMorphoTraits_KeyVariables.png", width = 10, height = 8, units = "in")
+FigS4.lgBox =
+  ggplot(LitReview.leaves.tagPercentage.morpho |> filter(variable %in% tagVariables.morphoKey.lgBox) |>
+           mutate(value = factor(value, levels = litreview.levels.value),
+                  variable = factor(variable, levels = litreview.levels.variable)),
+         aes(x = species, y = percent, fill = value)) +
+  geom_bar(position="fill", stat="identity", color = "black") +
+    geom_text(aes(label = stringr::str_wrap(paste(value, " (", n, ")", sep = ""), width = 18), lineheight = .75),
+              size = 2.5, position = position_fill(vjust = 0.5), vjust = 0.3) +
+  facet_wrap(~variable, ncol = 2) +
+  labs(x = "", y = "Percent of studies") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+  scale_fill_ochre(palette = "olsen_qual", reverse = FALSE) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+FigS4.smBox + FigS4.lgBox
+
+ggsave("visualizations/2024.05.17_LitReview_AnalysisMorphoTraits_KeyVariables.png", width = 10, height = 10, units = "in")
 
 # Try bar chart alternatives ----
 ## Shifted baseline ----
