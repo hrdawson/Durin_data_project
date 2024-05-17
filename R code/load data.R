@@ -13,7 +13,7 @@ leaf.ages = durin |>
   mutate(DURIN_plot = replace_na(DURIN_plot, "SO_F_EN_1")) |>
   # Select columns for quick comparison
   relocate(c(leaf_area, SLA, dry_mass_g, wet_mass_g, LDMC, leaf_thickness_1_mm:leaf_thickness_3_mm), .after = leaf_age) |>
-  select(envelope_ID, species, dataset, habitat, source, leaf_age:leaf_thickness_3_mm) |>
+  select(envelope_ID, siteID, DURIN_plot, plant_nr, leaf_nr, species, dataset, habitat, source, leaf_age:leaf_thickness_3_mm) |>
   # Tidy in long form
   pivot_longer(cols = leaf_area:leaf_thickness_3_mm, names_to = "trait", values_to = "value") |>
   # Standardize traits
