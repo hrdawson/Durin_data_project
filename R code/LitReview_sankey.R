@@ -24,13 +24,14 @@ LitReview.sankey = LitReview.leaves.traits |>
 
 LitReview.sankey.VV = LitReview.sankey |>
   filter(species == "Vaccinium vitis-idaea") |>
-  make_long(justification, leaf_year) |>
+  make_long(leaf_year, justification) |>
   mutate(species = "Vaccinium vitis-idaea")
 
 sankey.VV =
-ggplot(LitReview.sankey.VV, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = node)) +
+ggplot(LitReview.sankey.VV, aes(x = x, next_x = next_x, node = node, next_node = next_node,
+                                fill = factor(node), label = node)) +
   geom_alluvial(flow.alpha = .6) +
-  geom_alluvial_text(size = 3, color = "grey20") +
+  # geom_alluvial_text(size = 3, color = "grey20") +
   scale_fill_viridis_d(drop = FALSE) +
   theme_alluvial(base_size = 18) +
   labs(x = NULL) +
@@ -50,9 +51,10 @@ Lit.Review.sankey = LitReview.sankey.EN |>
   bind_rows(LitReview.sankey.VV)
 
 sankey.EN =
-ggplot(LitReview.sankey.EN, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = node)) +
+ggplot(LitReview.sankey.EN, aes(x = x, next_x = next_x, node = node, next_node = next_node,
+                                fill = factor(node), label = node)) +
   geom_alluvial(flow.alpha = .6) +
-  geom_alluvial_text(size = 3, color = "grey20") +
+  # geom_alluvial_text(size = 3, color = "grey20") +
   scale_fill_viridis_d(drop = FALSE) +
   theme_alluvial(base_size = 18) +
   labs(x = NULL) +
@@ -70,10 +72,13 @@ sankey.EN + sankey.VV +
   wrap_elements(panel = ~plot(sankey.EN, sankey.VV), clip = FALSE)
 par(old_par)
 
+ggsave("visualizations/2024.05.17_LitReviewSankey_NoLabels.png", width = 12, height = 8, units = "in")
+
 LitReview.sankey = LitReview.sankey.EN |>
   bind_rows(LitReview.sankey.VV)
 
-ggplot(LitReview.sankey, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = node)) +
+ggplot(LitReview.sankey, aes(x = x, next_x = next_x, node = node, next_node = next_node,
+                             fill = node, label = node)) +
   geom_alluvial(flow.alpha = .6) +
   geom_alluvial_text(size = 3, color = "grey20") +
   scale_fill_viridis_d(drop = FALSE) +
