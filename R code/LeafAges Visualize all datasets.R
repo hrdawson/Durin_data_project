@@ -67,7 +67,7 @@ DURIN.lit.sources.sum = DURIN.lit |>
   group_by(database, species, trait) |>
   summarise(n = length(dataset)) |>
   pivot_wider(names_from = species, values_from = n) |>
-  write.csv("output/2024.04.18_DURIN.lit.sources.csv")
+  # write.csv("output/2024.04.18_DURIN.lit.sources.csv")
 
 ## Find NA leaf_age
 error.leafage = DURIN.lit |>
