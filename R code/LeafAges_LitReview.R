@@ -70,12 +70,25 @@ LitReview.leaves.graphList = LitReview.leaves.all |>
   filter(str_detect(tag, "concurrent")) |>
   pull(Key)
 
+# Make justification tag consistent ----
+LitReview.justification = LitReview.leaves.all |>
+  filter(str_detect(tag, "justification")) |>
+  full_join(as.data.frame(LitReview.leaves.keepList) |> rename(Key = LitReview.leaves.keepList)) |>
+  mutate(tag = case_when(
+    tag == "justification: none" ~ "justification: unspecified",
+    is.na(tag) ~ "justification: unspecified",
+    TRUE ~ tag
+  ))
+
 # Compile into useful dataset ----
 LitReview.leaves.traits = LitReview.leaves.all |>
   # Filter to relevant studies
   filter(Key %in% LitReview.leaves.keepList) |>
   # Filter to relevant tags
   filter(tag %in% LitReview.leaves.tagList) |>
+  # Replace justifications
+  filter(!str_detect(tag, "justification")) |>
+  bind_rows(LitReview.justification) |>
   # Separate out variables
   separate(tag, into = c("variable", "value"), sep = ":") |>
   # Remove the white space
@@ -279,6 +292,7 @@ ggplot(LitReview.leaves.tagPercentage.morpho |> filter(variable %in% tagVariable
   labs(x = "", y = "Percent of studies") +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
   scale_fill_viridis_d(alpha = 0.5, direction = -1) +
+  scale_y_continuous(expand = c(0.001, 0.02)) +
   theme_bw() +
   theme(legend.position = "none")
 
@@ -294,6 +308,7 @@ FigS4.lgBox =
   labs(x = "", y = "Percent of studies") +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
   scale_fill_viridis_d(alpha = 0.5, direction = -1) +
+  scale_y_continuous(expand = c(0, 0)) +
   theme_bw() +
   theme(legend.position = "none")
 
