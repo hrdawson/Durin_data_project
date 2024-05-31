@@ -24,8 +24,9 @@ abstract.VV =
   labs(x = "", y = "") +
   theme_bw() +
   theme(strip.background = element_blank(),
+        text = element_text(size = 15),
         ggh4x.facet.nestline = element_line(colour = "black"),
-        axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none")
 
 abstract.EN =
@@ -43,10 +44,12 @@ abstract.EN =
   labs(x = "", y = "") +
   theme_bw() +
   theme(strip.background = element_blank(),
+        text = element_text(size = 15),
         ggh4x.facet.nestline = element_line(colour = "black"),
-        axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none")
 
-abstract.VV + abstract.EN
+abstract.EN + abstract.VV
 
 ggsave("visualizations/2024.05.16_TraitsTogether_Abstract.png", width = 8, height = 6, units = "in")
+ggsave("visualizations/2024.05.16_TraitsTogether_Presentation.png", width = 8, height = 6, units = "in")
