@@ -121,26 +121,27 @@ durin.random.corr = durin.random |>
 library(viridis)
 library(ggh4x)
 
-# All sites
-ggplot(durin.random.corr, aes(x = leaf_age, y = value)) +
-  geom_boxplot(alpha = 0.5, fill = "grey70") +
-  geom_line(aes(group=pairedID, color = corr), alpha = 0.1) +
-  scale_color_manual(values = c("blue", "red", "grey")) +
-  geom_point(aes(fill=leaf_age, group=pairedID)) +
-  scale_x_discrete(guide = "axis_nested") +
-  facet_nested(~ species + trait, scales = "free", independent = "y",
-               nest_line = element_line(linetype = 2)) +
-  labs(x = "Leaf year") +
-  theme_bw() +
-  theme(legend.position = "none", strip.background = element_blank(),
-        ggh4x.facet.nestline = element_line(colour = "black"),
-        axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
-        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust = 0.5))
-
-# ggsave("visualizations/2023.10.17_AgePaired.png", width = 14, height = 10, units = "in")
+# # All sites
+# ggplot(durin.random.corr, aes(x = leaf_age, y = value)) +
+#   geom_boxplot(alpha = 0.5, fill = "grey70") +
+#   geom_line(aes(group=pairedID, color = corr), alpha = 0.1) +
+#   scale_color_manual(values = c("blue", "red", "grey")) +
+#   geom_point(aes(fill=leaf_age, group=pairedID)) +
+#   scale_x_discrete(guide = "axis_nested") +
+#   facet_nested(~ species + trait, scales = "free", independent = "y",
+#                nest_line = element_line(linetype = 2)) +
+#   labs(x = "Leaf year") +
+#   theme_bw() +
+#   theme(legend.position = "none", strip.background = element_blank(),
+#         ggh4x.facet.nestline = element_line(colour = "black"),
+#         axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
+#         axis.text.y = element_text(angle = 90, vjust = 0.5, hjust = 0.5))
+#
+# # ggsave("visualizations/2023.10.17_AgePaired.png", width = 14, height = 10, units = "in")
 
 # Sogndal only
-ggplot(durin.random.corr |> filter(siteID == "Sogndal") |> drop_na(value) |> filter(!trait %in% c("Wet mass (g)")),
+ggplot(durin.random.corr |> filter(siteID == "Sogndal") |> drop_na(value) |>
+         filter(!trait %in% c("Wet mass (g)")),
        aes(x = interaction(leaf_age, habitat), y = value)) +
   geom_line(aes(group=pairedID, color = corr), alpha = 0.3) +
   scale_color_manual(values = c("blue", "red", "grey")) +
@@ -148,15 +149,40 @@ ggplot(durin.random.corr |> filter(siteID == "Sogndal") |> drop_na(value) |> fil
   geom_boxplot(alpha = 0.5, fill = "grey90") +
   scale_x_discrete(guide = "axis_nested") +
   facet_nested(trait ~ species, scales = "free", independent = "y",
-               nest_line = element_line(linetype = 2)) +
-  labs(x = "Leaf year") +
+               strip = strip_nested()
+               # nest_line = element_line(linetype = 2)
+               ) +
+  labs(x = "Leaf year", y = "Trait value") +
   theme_bw(base_size = 14) +
   theme(legend.position = "none", strip.background = element_blank(),
         ggh4x.facet.nestline = element_line(colour = "black"),
         # axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
         axis.text.y = element_text(angle = 90, vjust = 0.5, hjust = 0.5))
 
-ggsave("visualizations/2023.10.18_Sogndal_AgePaired_Outliers.png", width = 14, height = 10, units = "in")
-ggsave("visualizations/2023.10.18_Sogndal_AgePaired.png", width = 14, height = 10, units = "in")
+# ggsave("visualizations/2023.10.18_Sogndal_AgePaired_Outliers.png", width = 14, height = 10, units = "in")
+ggsave("visualizations/2023.05_17_Sogndal_AgePaired_Vertical.png", width = 6, height = 10, units = "in")
 # ggsave("visualizations/2023.04_04_Sogndal_AgePaired_Seed10.png", width = 14, height = 10, units = "in")
 # ggsave("visualizations/2023.04_04_Sogndal_AgePaired_Seed2023.png", width = 14, height = 10, units = "in")
+
+
+# Sogndal only No habitat
+ggplot(durin.random.corr |> filter(siteID == "Sogndal") |> drop_na(value) |>
+         filter(!trait %in% c("Wet mass (g)")),
+       aes(x = leaf_age, y = value)) +
+  geom_line(aes(group=pairedID, color = corr), alpha = 0.3) +
+  scale_color_manual(values = c("blue", "red", "grey")) +
+  geom_point(aes(fill=leaf_age, group=pairedID)) +
+  geom_boxplot(alpha = 0.5, fill = "grey90") +
+  scale_x_discrete(guide = "axis_nested") +
+  facet_nested(species ~ trait, scales = "free", independent = "y",
+               strip = strip_nested()
+               # nest_line = element_line(linetype = 2)
+  ) +
+  labs(x = "Leaf year", y = "Trait value") +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "none", strip.background = element_blank(),
+        ggh4x.facet.nestline = element_line(colour = "black"),
+        # axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
+        axis.text.y = element_text(angle = 90, vjust = 0.5, hjust = 0.5))
+
+ggsave("visualizations/2023.05_22_Sogndal_AgePaired.png", width = 10, height = 6, units = "in")
